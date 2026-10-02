@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>終活チェックリスト</title>
+<style>
+:root { --accent:#2b6cb0; --highlight:#fffbe5; --input-bg:#f9f9f9; } 
+body { 
+    font-family: "Hiragino Kaku Gothic Pro","Noto Sans JP",sans-serif; 
+    margin:16px; 
+}
+
+/* wrap: 全体の最大幅と中央寄せを定義 */
+.wrap { 
+    width:100%; 
+    max-width:1200px; 
+    margin:0 auto; 
+}
+
+/* 操作ボタン（コンテンツ最下部）を配置するためのエリア */
+.controls-at-bottom {
+    display:flex; 
+    flex-direction: column;
+    align-items: flex-end; 
+    gap:8px; 
+    margin-top: 16px; 
+    width: 100%; 
+}
+
+/* ボタンの共通スタイル */
+.controls-at-bottom button, .chapter-btn { 
+    padding:6px 10px; 
+    border-radius:6px; 
+    cursor:pointer; 
+    text-decoration:none; 
+    flex-shrink: 0; 
+    text-align: left;
+    width: 100%; 
+    max-width: 180px; 
+    /* 文字色を白、背景色を青、枠線も青に統一 */
+    color: #fff;
+    background: var(--accent);
+    border: 1px solid var(--accent); 
+}
+
+/* mainコンテナ */
+.main { 
+    /* 目次エリアの比率は1fr、コンテンツエリアは2fr (幅拡大の設定を維持) */
+    grid-template-columns: minmax(250px, 1fr) 2fr; 
+    display:grid; 
+    gap:16px; 
+    width: 100%; 
+}
+@media (max-width: 900px) {
+    .main { 
+        grid-template-columns: 1fr;
+    } 
+}
+
+/* 目次：選択されていない章の項目（サブリスト）を非表示に */
+nav.toc ul ul {
+    display: none; 
+}
+/* activeな章の項目のみ表示 */
+nav.toc ul li.active &gt; ul {
+    display: block; 
+}
+
+/* 目次枠全体 */
+nav.toc { 
+    border:1px solid #eee; 
+    padding:12px; 
+    border-radius:8px; 
+    background:#fafafa; 
+    max-height:72vh; 
+    overflow:auto; 
+    width:100%; 
+    /* 目次リストの左寄せを維持するため text-align: center は削除 */
+}
+/* 目次タイトルコンテナ */
+.toc-header {
+    font-size: 18px;
+    margin: 0 0 8px 0; /* 下マージンを維持 */
+    display: block; 
+    /* タイトルのみ中央揃え */
+    text-align: center;
+}
+/* 目次タイトル (h2) のみ */
+nav.toc h2 {
+    font-size: 18px;
+    margin: 0;
+    /* 文字間隔を5文字分（5em）空ける */
+    letter-spacing: 5em;
+}
+/* 目次内の小ボタン (今回は使用しないが定義は残す) */
+nav.toc .small-btn {
+    font-size:12px; 
+    padding:6px 8px; 
+    border-radius:6px; 
+    border:1px solid #ccc; 
+    background:#fff; 
+    cursor:pointer;
+}
+
+/* 目次リストのスタイル */
+nav.toc ul { 
+    list-style:none; 
+    padding:0; 
+    margin:0; 
+}
+/* 目次リストの項目 */
+nav.toc li { 
+    margin:6px 0; 
+}
+/* 目次項目リンク */
+nav.toc a {
+    font-size:16px; 
+    /* 文字間隔の調整 */
+    letter-spacing: 0.5px;
+    text-align: left; /* 明示的に左寄せを設定 */
+    display: block; 
+}
+/* 目次サブ項目 */
+nav.toc a.small {
+    font-size:14px; 
+    /* 文字間隔の調整 */
+    letter-spacing: 0.3px;
+}
+
+
+.content { 
+    border:1px solid #eee; 
+    padding:12px; 
+    border-radius:8px; 
+    background:#fff; 
+    max-height:72vh; 
+    overflow:auto; 
+    width:100%; 
+}
+/* 章タイトル */
+.chapter-title {
+    margin:0 0 12px 0;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+/* 章タイトルの文字サイズを拡大 */
+.chapter-title strong {
+    font-size: 22px;
+}
+/* 章タイトル内のボタンを非表示 (トップへボタン削除のため) */
+.chapter-title div {
+    display: none;
+}
+
+.item { 
+    padding:10px; 
+    border-bottom:1px solid #f0f0f0; 
+    display:block;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; 
+}
+
+/* ハイライト表示 (薄黄色) */
+.item.highlight {
+    background-color: var(--highlight) !important; 
+    border: 1px solid #f9e9a4 !important;
+    border-radius: 4px;
+}
+
+/* 項目全体にマウスオーバー時、青い枠線を表示 (太さ 4px) */
+.item:hover {
+    box-shadow: 0 0 0 4px rgba(43, 108, 176, 0.5); 
+    z-index: 10;
+}
+
+/* 項目内の要素にフォーカスが当たっている時、青い枠線を表示 (太さ 4px) */
+.item:focus-within {
+    box-shadow: 0 0 0 4px rgba(43, 108, 176, 0.7); 
+    z-index: 10;
+}
+
+.item:last-child { border-bottom:none; }
+.item-row { display:flex; gap:10px; align-items:flex-start; }
+/* チェックリスト項目の文字 */
+.item-row label {
+    font-size:20px;
+}
+.item-row input[type="checkbox"] {
+    transform: scale(1.3);
+    margin-top:4px;
+}
+.comment { margin-top:8px; }
+
+/* テキストエリアのスタイルを調整し、背景色を少しグレーにする */
+.comment textarea { 
+    width:100%; 
+    min-height:56px; 
+    resize:vertical; 
+    padding:8px; 
+    border-radius:6px; 
+    border:1px solid #ddd; 
+    font-size:20px;
+    background-color: var(--input-bg); 
+}
+
+.meta { font-size:12px; color:#666; margin-top:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.small-btn { font-size:12px; padding:6px 8px; border-radius:6px; border:1px solid #ccc; background:#fff; color:#000; cursor:pointer; }
+
+footer { margin-top:12px; font-size:12px; color:#666; }
+</style>
+
+<h2>終活チェックリスト50項目（分野別・網羅版）Excel対応</h2>
+
+<p>５カテゴリ×１０項目のチェックリスト、Excelにエクスポート、インポートできます。</p>
+
+<div class="wrap">
+&nbsp; &nbsp; 
+&nbsp; <div class="main">
+&nbsp; &nbsp; <nav class="toc" id="tocNavigation" aria-label="目次">
+&nbsp; &nbsp; &nbsp; <div class="toc-header">
+          <h2>目次</h2> </div>
+&nbsp; &nbsp; &nbsp; <ul id="tocList"></ul>
+&nbsp; &nbsp; </nav>
+
+&nbsp; &nbsp; <div class="content" id="contentArea" tabindex="0">
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </div>
+&nbsp; </div>
+
+  <div class="controls-at-bottom">
+    <button id="importExcelBtn" title="Excelを読み込む">インポート（Excel）</button>
+&nbsp; &nbsp; <button id="exportExcel" title="保存データをExcelでダウンロード">エクスポート（Excel）</button>
+&nbsp; &nbsp; <button id="clearAll" title="チェックとコメントをすべて消去">全消去</button>
+&nbsp; &nbsp; <button id="saveAll">変更を保存</button>
+  </div>
+
+&nbsp; <footer>
+&nbsp; &nbsp; ※チェックとコメントはブラウザの保存領域に保存されます（localStorage）。別端末で共有する場合は「エクスポート/インポート」を使用してください。
+&nbsp; 
+</div>
+
+<input id="importExcelInput" type="file" accept=".xlsx" style="display:none">
+
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+<script>
+// 章データ（JSONと同じ構造）
+const chapters = [
+  { id:1, title:"第1章　お金と財産管理", items:[
+    "銀行口座の一覧を作成する", "預金通帳・キャッシュカードを整理する", "年金の受給手続きを確認する", "保険契約（生命・医療・がん等）の内容と受取人を整理する", "株式・投資信託・不動産の情報をまとめる",
+      "借金・ローンの残高や保証人を明記する", "公共料金やサブスクの自動引き落としを整理する", "財産目録を作成する", "相続税の試算をしておく", "遺産分割の希望を整理しておく"
+  ]},
+  { id:2, title:"第2章　介護・生活サポート", items:[
+      "介護が必要になった時の希望（自宅／施設）を記録する", "介護施設の候補リストを作る", "介護保険サービスの利用方法を理解しておく", "見守りサービスや生活支援サービスを登録する", "日常の家事・買い物支援を手配しておく",
+      "緊急連絡網（家族・親族・医師・近隣）のリストを作る", "身元保証人を確保しておく", "介護費用の試算をしておく", "介護してくれる人への感謝の手紙を書く", "将来の住まいについて決めておく"
+  ]},
+  { id:3, title:"第3章　医療・健康管理", items:[
+      "かかりつけ医の情報を整理する", "持病や服薬の記録を残す", "医療保険証や高齢者医療証をすぐ取り出せる場所に保管する", "延命治療に関する意思表示を明記する", "臓器提供の意思を示す（ドナーカード等）",
+      "入院セットを準備しておく", "認知症に備えて成年後見制度や家族信託を検討する", "緊急医療情報カードを作成する", "健康診断・人間ドックの記録を整理する", "在宅医療や訪問診療の体制を確認する"
+  ]},
+  { id:4, title:"第4章　心・人生の整理", items:[
+      "エンディングノートを作成する", "家族や友人への感謝の言葉を書く", "思い出の写真や日記を整理する", "自分史・年表を作成する", "大切な物の譲り先を決める",
+      "デジタル遺品（PC・スマホ・SNS等）を整理する", "ペットの世話を託す人を決める", "宗教や信仰に関する希望を記録する", "心の不安を相談できる人を持つ", "趣味や活動の後継者を探す"
+  ]},
+  { id:5, title:"第5章　葬儀・供養・死後の手続き", items:[
+      "葬儀の規模（家族葬・一般葬・直葬）を決める", "葬儀社の事前相談をして見積もりを取る", "お墓の準備（新規・改葬・永代供養）を決める", "納骨堂や樹木葬の情報を収集する", "戒名・法名・俗名の希望を伝える",
+      "葬儀で使用したい音楽や花を指定する", "遺影写真を準備しておく", "香典や供物の扱いについて希望を明記する", "死後の連絡先リストを作る（親戚・友人・関係団体など）", "死亡後の役所・保険会社等への手続きを一覧化しておく"
+  ]}
+];
+
+const STORAGE_KEY = 'shukatsu_v1';
+let state = {};
+function idFor(ch, idx){ return `ch${ch}-item${idx}`; }
+
+function loadState(){ try { state = JSON.parse(localStorage.getItem(STORAGE_KEY))||{}; } catch(e){ state={}; } }
+function saveState(){ 
+    const now = Date.now();
+    Object.keys(state).forEach(key => {
+        if (state[key].checked || state[key].comment) {
+             state[key].savedAt = now;
+        }
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); 
+    flashMessage('保存しました'); 
+    renderCurrent(); 
+}
+function clearState(){ if(!confirm('チェックとコメントをすべて消去しますか？')) return; state={}; localStorage.removeItem(STORAGE_KEY); renderCurrent(); }
+function flashMessage(msg){ const el=document.createElement('div'); el.textContent=msg; Object.assign(el.style,{position:'fixed',right:'18px',bottom:'60px',background:'#222',color:'#fff',padding:'8px 12px',borderRadius:'8px',opacity:0.95,zIndex:9999}); document.body.appendChild(el); setTimeout(()=>el.remove(),1200); }
+
+const contentArea = document.getElementById('contentArea');
+const tocList = document.getElementById('tocList');
+const tocNavigation = document.getElementById('tocNavigation');
+let currentChapter = 1;
+
+// 目次レンダリング
+function buildTOC(){
+  tocList.innerHTML='';
+  chapters.forEach(ch=>{
+    const li = document.createElement('li');
+    li.dataset.chapterId = ch.id; 
+    li.className = 'toc-item';
+    
+    const a = document.createElement('a'); a.textContent=ch.title; a.href='#';
+    // 章タイトルクリックで該当の章を表示し、コンテンツをトップへスクロール
+    a.onclick = e=>{ e.preventDefault(); renderChapter(ch.id); contentArea.scrollTo({top:0,behavior:'smooth'}); };
+    
+    li.appendChild(a);
+    
+    const sub = document.createElement('ul'); 
+    sub.dataset.chapterId = ch.id;
+    sub.style.margin='6px 0 8px 12px';
+    
+    ch.items.forEach((it, idx)=>{
+      const subli = document.createElement('li');
+      const sa = document.createElement('a'); sa.textContent = it.length>36? it.slice(0,36)+'…': it; sa.href='#';
+      sa.onclick = e=>{ e.preventDefault(); renderChapter(ch.id, ()=>{ 
+            const el=document.getElementById(idFor(ch.id, idx)); 
+            if(el){ 
+                el.scrollIntoView({behavior:'smooth', block:'start'}); 
+                highlightItem(el); 
+                setTimeout(() => {
+                    el.querySelector('textarea')?.focus(); 
+                }, 100);
+            } 
+        }); 
+    };
+      sa.className='small';
+      subli.appendChild(sa); sub.appendChild(subli);
+    });
+    li.appendChild(sub); tocList.appendChild(li);
+  });
+    updateTOCDisplay(currentChapter);
+}
+
+// 項目をハイライトする関数
+function highlightItem(element) {
+    // 既存のハイライトをすべて削除
+    document.querySelectorAll('.item.highlight').forEach(el => el.classList.remove('highlight'));
+    // 新しいハイライトを設定
+    element.classList.add('highlight');
+}
+
+// 目次表示を制御する関数 (li.activeのトグル機能として利用)
+function updateTOCDisplay(chId) {
+    // 目次のメイン項目すべてから active クラスを削除
+    document.querySelectorAll('.toc-item').forEach(li => {
+        li.classList.remove('active');
+    });
+
+    // 選択された章の li 要素に active クラスを設定
+    const activeTocItem = document.querySelector(`.toc-item[data-chapter-id="${chId}"]`);
+    if (activeTocItem) {
+        activeTocItem.classList.add('active');
+    }
+}
+
+
+// 章レンダリング
+function renderChapter(chId, callback){
+  currentChapter = chId;
+  contentArea.innerHTML='';
+  const ch = chapters.find(c=>c.id===chId);
+  
+    // 目次を更新 (選択された章の目次のみ展開表示)
+    updateTOCDisplay(chId);
+
+  // 章タイトルを生成し、コンテンツエリアに追加
+  const h = document.createElement('div'); h.className='chapter-title';
+  h.innerHTML=`<strong>${ch.title}</strong><div></div>`; 
+  contentArea.appendChild(h);
+
+  ch.items.forEach((it, idx)=>{
+    const uid=idFor(chId, idx); 
+    const key=uid;
+    if (!state[key]) {
+        state[key] = { checked: false, comment: '', savedAt: 0 };
+    }
+    
+    const wrapper = document.createElement('div'); wrapper.className='item'; wrapper.id=uid;
+    const row = document.createElement('div'); row.className='item-row';
+    const cb = document.createElement('input'); cb.type='checkbox'; cb.id=uid+'-cb'; cb.checked=!!(state[key]?.checked);
+    cb.addEventListener('change',()=>{ state[key].checked=cb.checked; saveState(); });
+    
+    const lab = document.createElement('label'); lab.htmlFor=cb.id; lab.innerHTML=`<strong>${idx+1}.</strong>&nbsp; ${it}`;
+    row.appendChild(cb); row.appendChild(lab);
+    const commentWrap = document.createElement('div'); commentWrap.className='comment';
+    const ta = document.createElement('textarea'); ta.placeholder='この項目へのメモや備考を入力できます...';
+    ta.value = state[key]?.comment||''; 
+    
+    // テキストエリアにフォーカスがあたったときにハイライトを適用
+    ta.addEventListener('focus', () => { 
+        highlightItem(wrapper); 
+    });
+    
+    ta.addEventListener('input',()=>{ state[key].comment=ta.value; saveState(); });
+    
+    commentWrap.appendChild(ta);
+    const meta = document.createElement('div'); meta.className='meta';
+    
+    const lastSaved = document.createElement('div'); 
+    lastSaved.textContent = state[key]?.savedAt > 0 ? `更新: ${new Date(state[key].savedAt).toLocaleString()}` : '';
+
+    // クリアボタン
+    const actions = document.createElement('div'); const clearBtn=document.createElement('button'); clearBtn.className='small-btn'; clearBtn.textContent='クリア';
+    clearBtn.onclick=()=>{ 
+        if(confirm('この項目のチェックとコメントを消しますか？')){ 
+            state[key].checked=false; 
+            state[key].comment=''; 
+            state[key].savedAt=0; 
+            cb.checked=false; 
+            ta.value=''; 
+        } 
+    };
+    
+    actions.appendChild(clearBtn); meta.appendChild(lastSaved); meta.appendChild(actions);
+    wrapper.appendChild(row); wrapper.appendChild(commentWrap); wrapper.appendChild(meta);
+    contentArea.appendChild(wrapper);
+    
+    // 項目行をクリックしたときにハイライト
+    wrapper.addEventListener('click', (e) => {
+        highlightItem(wrapper);
+        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'TEXTAREA') {
+            ta.focus();
+        }
+    });
+
+  });
+
+  if(callback) callback();
+}
+
+
+// Excel出力
+function exportExcel(){
+  const wb = XLSX.utils.book_new();
+  chapters.forEach(ch=>{
+    const data = ch.items.map((item, idx)=>{
+      const key = idFor(ch.id, idx);
+      return {
+            項目: item, 
+            チェック: state[key]?.checked?'済':'', 
+            コメント: state[key]?.comment||'',
+            最終更新日時: state[key]?.savedAt > 0 ? new Date(state[key].savedAt).toLocaleString() : ''
+        };
+    });
+    const ws = XLSX.utils.json_to_sheet(data, {header:["項目","チェック","コメント", "最終更新日時"]});
+    XLSX.utils.book_append_sheet(wb, ws, ch.title.slice(0,31));
+  });
+  XLSX.writeFile(wb,'shukatsu_checklist.xlsx');
+}
+
+// Excelインポート
+function importExcel(file){
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const wb = XLSX.read(e.target.result,{type:'binary'});
+    wb.SheetNames.forEach((sheetName, chIdx)=>{
+      const chId = chIdx + 1;
+      if (!chapters[chIdx] || chapters[chIdx].title.slice(0, 31) !== sheetName) return; 
+
+      const ws = wb.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(ws,{defval:''});
+      data.forEach((row, idx)=>{
+        const key = idFor(chId, idx);
+        const isChecked = row['チェック'] === '済';
+        const commentValue = row['コメント'] || '';
+        const savedAtValue = row['最終更新日時'] ? new Date(row['最終更新日時']).getTime() : Date.now();
+        
+        if (isChecked || commentValue) {
+            state[key] = { 
+                checked: isChecked, 
+                comment: commentValue, 
+                savedAt: savedAtValue 
+            };
+        } else {
+            delete state[key];
+        }
+      });
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); 
+    renderCurrent(); 
+    flashMessage('Excelデータを読み込みました');
+  };
+  reader.readAsBinaryString(file);
+}
+
+
+// 初期化
+function renderCurrent(){ 
+    buildTOC(); 
+    renderChapter(currentChapter); 
+}
+
+// イベントリスナー
+document.getElementById('saveAll').addEventListener('click', saveState);
+document.getElementById('clearAll').addEventListener('click', clearState);
+document.getElementById('exportExcel').addEventListener('click', exportExcel);
+document.getElementById('importExcelBtn').addEventListener('click',()=>document.getElementById('importExcelInput').click());
+document.getElementById('importExcelInput').addEventListener('change', e=>{ if(e.target.files[0]) importExcel(e.target.files[0]); e.target.value=''; });
+
+loadState(); renderCurrent();
+</script>
+
