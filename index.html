@@ -1,503 +1,3229 @@
-<!DOCTYPE html>
-
-
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>終活チェックリスト</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-:root { --accent:#2b6cb0; --highlight:#fffbe5; --input-bg:#f9f9f9; } 
-body { 
-    font-family: "Hiragino Kaku Gothic Pro","Noto Sans JP",sans-serif; 
-    margin:16px; 
-}
-
-/* wrap: 全体の最大幅と中央寄せを定義 */
-.wrap { 
-    width:100%; 
-    max-width:1200px; 
-    margin:0 auto; 
-}
-
-/* 操作ボタン（コンテンツ最下部）を配置するためのエリア */
-.controls-at-bottom {
-    display:flex; 
-    flex-direction: column;
-    align-items: flex-end; 
-    gap:8px; 
-    margin-top: 16px; 
-    width: 100%; 
-}
-
-/* ボタンの共通スタイル */
-.controls-at-bottom button, .chapter-btn { 
-    padding:6px 10px; 
-    border-radius:6px; 
-    cursor:pointer; 
-    text-decoration:none; 
-    flex-shrink: 0; 
-    text-align: left;
-    width: 100%; 
-    max-width: 180px; 
-    /* 文字色を白、背景色を青、枠線も青に統一 */
-    color: #fff;
-    background: var(--accent);
-    border: 1px solid var(--accent); 
-}
-
-/* mainコンテナ */
-.main { 
-    /* 目次エリアの比率は1fr、コンテンツエリアは2fr (幅拡大の設定を維持) */
-    grid-template-columns: minmax(250px, 1fr) 2fr; 
-    display:grid; 
-    gap:16px; 
-    width: 100%; 
-}
-@media (max-width: 900px) {
-    .main { 
-        grid-template-columns: 1fr;
-    } 
-}
-
-/* 目次：選択されていない章の項目（サブリスト）を非表示に */
-nav.toc ul ul {
-    display: none; 
-}
-/* activeな章の項目のみ表示 */
-nav.toc ul li.active &gt; ul {
-    display: block; 
-}
-
-/* 目次枠全体 */
-nav.toc { 
-    border:1px solid #eee; 
-    padding:12px; 
-    border-radius:8px; 
-    background:#fafafa; 
-    max-height:72vh; 
-    overflow:auto; 
-    width:100%; 
-    /* 目次リストの左寄せを維持するため text-align: center は削除 */
-}
-/* 目次タイトルコンテナ */
-.toc-header {
-    font-size: 18px;
-    margin: 0 0 8px 0; /* 下マージンを維持 */
-    display: block; 
-    /* タイトルのみ中央揃え */
-    text-align: center;
-}
-/* 目次タイトル (h2) のみ */
-nav.toc h2 {
-    font-size: 18px;
-    margin: 0;
-    /* 文字間隔を5文字分（5em）空ける */
-    letter-spacing: 5em;
-}
-/* 目次内の小ボタン (今回は使用しないが定義は残す) */
-nav.toc .small-btn {
-    font-size:12px; 
-    padding:6px 8px; 
-    border-radius:6px; 
-    border:1px solid #ccc; 
-    background:#fff; 
-    cursor:pointer;
-}
-
-/* 目次リストのスタイル */
-nav.toc ul { 
-    list-style:none; 
-    padding:0; 
-    margin:0; 
-}
-/* 目次リストの項目 */
-nav.toc li { 
-    margin:6px 0; 
-}
-/* 目次項目リンク */
-nav.toc a {
-    font-size:16px; 
-    /* 文字間隔の調整 */
-    letter-spacing: 0.5px;
-    text-align: left; /* 明示的に左寄せを設定 */
-    display: block; 
-}
-/* 目次サブ項目 */
-nav.toc a.small {
-    font-size:14px; 
-    /* 文字間隔の調整 */
-    letter-spacing: 0.3px;
-}
-
-
-.content { 
-    border:1px solid #eee; 
-    padding:12px; 
-    border-radius:8px; 
-    background:#fff; 
-    max-height:72vh; 
-    overflow:auto; 
-    width:100%; 
-}
-/* 章タイトル */
-.chapter-title {
-    margin:0 0 12px 0;
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-}
-/* 章タイトルの文字サイズを拡大 */
-.chapter-title strong {
-    font-size: 22px;
-}
-/* 章タイトル内のボタンを非表示 (トップへボタン削除のため) */
-.chapter-title div {
-    display: none;
-}
-
-.item { 
-    padding:10px; 
-    border-bottom:1px solid #f0f0f0; 
-    display:block;
-    transition: background-color 0.3s ease, box-shadow 0.3s ease; 
-}
-
-/* ハイライト表示 (薄黄色) */
-.item.highlight {
-    background-color: var(--highlight) !important; 
-    border: 1px solid #f9e9a4 !important;
-    border-radius: 4px;
-}
-
-/* 項目全体にマウスオーバー時、青い枠線を表示 (太さ 4px) */
-.item:hover {
-    box-shadow: 0 0 0 4px rgba(43, 108, 176, 0.5); 
-    z-index: 10;
-}
-
-/* 項目内の要素にフォーカスが当たっている時、青い枠線を表示 (太さ 4px) */
-.item:focus-within {
-    box-shadow: 0 0 0 4px rgba(43, 108, 176, 0.7); 
-    z-index: 10;
-}
-
-.item:last-child { border-bottom:none; }
-.item-row { display:flex; gap:10px; align-items:flex-start; }
-/* チェックリスト項目の文字 */
-.item-row label {
-    font-size:20px;
-}
-.item-row input[type="checkbox"] {
-    transform: scale(1.3);
-    margin-top:4px;
-}
-.comment { margin-top:8px; }
-
-/* テキストエリアのスタイルを調整し、背景色を少しグレーにする */
-.comment textarea { 
-    width:100%; 
-    min-height:56px; 
-    resize:vertical; 
-    padding:8px; 
-    border-radius:6px; 
-    border:1px solid #ddd; 
-    font-size:20px;
-    background-color: var(--input-bg); 
-}
-
-.meta { font-size:12px; color:#666; margin-top:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
-.small-btn { font-size:12px; padding:6px 8px; border-radius:6px; border:1px solid #ccc; background:#fff; color:#000; cursor:pointer; }
-
-footer { margin-top:12px; font-size:12px; color:#666; }
+  body { font-family: "Noto Sans JP", sans-serif; background-color: #f4f6f8; margin:0; padding:10px; }
+  .card { background:#fff; border-radius:14px; padding:16px; margin:12px auto; box-shadow:0 3px 8px rgba(0,0,0,0.1); max-width:700px; }
+  .pattern { font-weight:bold; font-size:1.2rem; color:#1f2937; margin-bottom:8px; }
+  .example { display:flex; justify-content:space-between; align-items:center; margin:6px 0; font-size:1.05rem; }
+  button { background-color:#4f46e5; border:none; color:white; padding:6px 10px; border-radius:8px; cursor:pointer; margin-left:5px; }
+  button:hover { background-color:#4338ca; }
+  .jp { color:#555; font-size:0.95rem; margin-left:5px; }
+  .pattern-buttons { margin-top:10px; text-align:center; }
+  .speed-bar { text-align:center; margin:15px auto; font-size:1rem; color:#333; }
+  .speed-bar input[type="range"] { width:180px; vertical-align:middle; }
 </style>
-
-<h2>終活チェックリスト50項目（分野別・網羅版）Excel対応</h2>
-
-<p>５カテゴリ×１０項目のチェックリスト、Excelにエクスポート、インポートできます。</p>
-
-<div class="wrap">
-&nbsp; &nbsp; 
-&nbsp; <div class="main">
-&nbsp; &nbsp; <nav class="toc" id="tocNavigation" aria-label="目次">
-&nbsp; &nbsp; &nbsp; <div class="toc-header">
-          <h2>目次</h2> </div>
-&nbsp; &nbsp; &nbsp; <ul id="tocList"></ul>
-&nbsp; &nbsp; </nav>
-
-&nbsp; &nbsp; <div class="content" id="contentArea" tabindex="0">
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </div>
-&nbsp; </div>
-
-  <div class="controls-at-bottom">
-    <button id="importExcelBtn" title="Excelを読み込む">インポート（Excel）</button>
-&nbsp; &nbsp; <button id="exportExcel" title="保存データをExcelでダウンロード">エクスポート（Excel）</button>
-&nbsp; &nbsp; <button id="clearAll" title="チェックとコメントをすべて消去">全消去</button>
-&nbsp; &nbsp; <button id="saveAll">変更を保存</button>
-  </div>
-
-&nbsp; <footer>
-&nbsp; &nbsp; ※チェックとコメントはブラウザの保存領域に保存されます（localStorage）。別端末で共有する場合は「エクスポート/インポート」を使用してください。
-&nbsp; 
+<!-- スピードバー（上部のみ） -->
+<div class="speed-bar">
+  音声スピード：
+  <input type="range" id="speedRange" min="0.5" max="2.0" value="1.0" step="0.1">
+  <span id="speedValue">1.0</span>
 </div>
-
-<input id="importExcelInput" type="file" accept=".xlsx" style="display:none">
-
-<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-
+<div id="cards"></div>
 <script>
-// 章データ（JSONと同じ構造）
-const chapters = [
-  { id:1, title:"第1章　お金と財産管理", items:[
-    "銀行口座の一覧を作成する", "預金通帳・キャッシュカードを整理する", "年金の受給手続きを確認する", "保険契約（生命・医療・がん等）の内容と受取人を整理する", "株式・投資信託・不動産の情報をまとめる",
-      "借金・ローンの残高や保証人を明記する", "公共料金やサブスクの自動引き落としを整理する", "財産目録を作成する", "相続税の試算をしておく", "遺産分割の希望を整理しておく"
-  ]},
-  { id:2, title:"第2章　介護・生活サポート", items:[
-      "介護が必要になった時の希望（自宅／施設）を記録する", "介護施設の候補リストを作る", "介護保険サービスの利用方法を理解しておく", "見守りサービスや生活支援サービスを登録する", "日常の家事・買い物支援を手配しておく",
-      "緊急連絡網（家族・親族・医師・近隣）のリストを作る", "身元保証人を確保しておく", "介護費用の試算をしておく", "介護してくれる人への感謝の手紙を書く", "将来の住まいについて決めておく"
-  ]},
-  { id:3, title:"第3章　医療・健康管理", items:[
-      "かかりつけ医の情報を整理する", "持病や服薬の記録を残す", "医療保険証や高齢者医療証をすぐ取り出せる場所に保管する", "延命治療に関する意思表示を明記する", "臓器提供の意思を示す（ドナーカード等）",
-      "入院セットを準備しておく", "認知症に備えて成年後見制度や家族信託を検討する", "緊急医療情報カードを作成する", "健康診断・人間ドックの記録を整理する", "在宅医療や訪問診療の体制を確認する"
-  ]},
-  { id:4, title:"第4章　心・人生の整理", items:[
-      "エンディングノートを作成する", "家族や友人への感謝の言葉を書く", "思い出の写真や日記を整理する", "自分史・年表を作成する", "大切な物の譲り先を決める",
-      "デジタル遺品（PC・スマホ・SNS等）を整理する", "ペットの世話を託す人を決める", "宗教や信仰に関する希望を記録する", "心の不安を相談できる人を持つ", "趣味や活動の後継者を探す"
-  ]},
-  { id:5, title:"第5章　葬儀・供養・死後の手続き", items:[
-      "葬儀の規模（家族葬・一般葬・直葬）を決める", "葬儀社の事前相談をして見積もりを取る", "お墓の準備（新規・改葬・永代供養）を決める", "納骨堂や樹木葬の情報を収集する", "戒名・法名・俗名の希望を伝える",
-      "葬儀で使用したい音楽や花を指定する", "遺影写真を準備しておく", "香典や供物の扱いについて希望を明記する", "死後の連絡先リストを作る（親戚・友人・関係団体など）", "死亡後の役所・保険会社等への手続きを一覧化しておく"
-  ]}
+const data = [
+  {pattern:"  ",
+   examples:[
+["face", "に直面する"],
+["effectively", "効果的に"],
+["drive", "運転する"],
+["found", "を見つけた"],
+["have", "を持っている"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["besides", "そのうえ，さらに"],
+["stand", "をがまんする"],
+["get", "になる"],
+["Earth", "地球"],
+["sort", "種類"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["himself", "彼自身を"],
+["amaze", "をびっくりさせる"],
+["night", "夜"],
+["knee", "ひざ"],
+["break", "壊れる，破る"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["print", "を印刷する"],
+["custom-made", "注文で作った"],
+["join", "に参加する"],
+["decision", "決定"],
+["apologize", "謝る"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["make", "を作る"],
+["cut", "を切る"],
+["fire", "火事"],
+["travel", "旅行"],
+["left", "左"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["certainly", "承知しました"],
+["renewable", "再生可能な"],
+["down", "に沿って"],
+["our", "私たちの"],
+["while", "しばらくの間"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["cross", "を横切る，渡る"],
+["calligraphy", "書道"],
+["water", "水"],
+["hunt", "を狩る"],
+["international", "国際的な"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["movie", "映画"],
+["exchange", "交換"],
+["has to", "しなければならない"],
+["rainy", "雨の"],
+["opinion", "意見，考え"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["throw", "投げる"],
+["during", "--の間"],
+["am", "にいる、ある"],
+["teach", "教える"],
+["singer", "歌手"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["noisy", "騒がしい"],
+["tell to --", "に--するように言う"],
+["thirteen", "13"],
+["sit", "座る"],
+["large", "大きい，広い"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["sunset", "日没"],
+["wood", "木材"],
+["continue", "を続ける"],
+["son", "息子"],
+["bowl", "鉢"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["ask", "をたのむ"],
+["them", "彼らを"],
+["arrive at", "に到着する"],
+["animal", "動物"],
+["subject", "教科、科目"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["his", "彼の"],
+["beauty", "美しさ、美"],
+["father", "父"],
+["afternoon", "午後"],
+["curious", "好奇心の強い"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["large", "大きい、広い"],
+["artistic", "芸術的な"],
+["corner", "角，隅"],
+["play", "を演奏する"],
+["super", "とても，すごく"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["around", "あちこち、めぐって"],
+["sing", "を歌う"],
+["teach", "教える"],
+["stone", "石"],
+["another", "もう一つの"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["by", "通り過ぎて"],
+["before", "の前に"],
+["do", "をする、行う"],
+["China", "中国"],
+["rode", "乗った"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["most", "たいていの，大部分の"],
+["everything", "何でも"],
+["branch", "枝"],
+["plane", "飛行機"],
+["writer", "作家"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["paper crane", "折り鶴"],
+["exercise", "練習する"],
+["weight", "重さ"],
+["hand out", "を配る"],
+["mean", "を意味する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["visitor", "観光客"],
+["quickly", "素早く"],
+["kindliness", "親切さ"],
+["take", "を撮る"],
+["interesting", "興味深い"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["that", "あの"],
+["row", "こぐ"],
+["grandfather", "祖父"],
+["foreign", "外国の"],
+["probably", "多分"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["August", "8月"],
+["much", "[動詞を修飾して]おおいに、たいへん"],
+["ours", "私たちのもの"],
+["barrier", "障壁"],
+["between", "--と--の間"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["rule", "支配，統治"],
+["graph", "図表"],
+["planet", "惑星"],
+["fun", "楽しい"],
+["health", "健康"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["museum", "博物館"],
+["carpet", "じゅうたん"],
+["dot", "点"],
+["cap", "帽子"],
+["fossil fuel", "化石燃料"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["July", "7月"],
+["pull", "を引く"],
+["fantastic", "すばらしい"],
+["stay", "滞在する"],
+["brave", "勇敢な"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["October", "10月"],
+["take a look", "ちらりと見る"],
+["wind", "風"],
+["a kind of", "一種の"],
+["fly", "飛ぶ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["festival", "祭り"],
+["support", "を支援する，応援する"],
+["am", "午前"],
+["practice", "練習する"],
+["read", "を読む"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["library", "図書館"],
+["nature", "自然"],
+["difference", "ちがい"],
+["college", "大学"],
+["policeman", "警官"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["awesome", "すばらしい"],
+["near", "の近くで"],
+["frog", "カエル"],
+["book", "本"],
+["heaven", "天国"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["last", "この前の"],
+["blood", "血"],
+["human", "人間の"],
+["gentle", "やさしい"],
+["tired", "疲れた"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["letter", "文字"],
+["ten", "10"],
+["sky", "空"],
+["be satisfied with", "に満足する"],
+["building", "建物"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["match", "試合"],
+["all the time", "常に"],
+["however", "しかしながら、けれども"],
+["death", "死"],
+["one by one", "1つずつ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["entrance", "入口"],
+["in the future", "将来に"],
+["young", "若い"],
+["wear", "着る"],
+["forward", "前方へ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["colorful", "色彩に富んだ"],
+["station", "駅"],
+["translate", "翻訳する"],
+["raw", "生の"],
+["human being", "人間"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["understand", "を理解する"],
+["not only but also --", "だけでなく--もまた"],
+["meant", "意味した"],
+["oil", "油"],
+["back", "裏の，後ろの"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["beef", "牛肉"],
+["activity", "活動"],
+["part", "部分"],
+["company", "会社"],
+["lost", "失った"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["arrest", "を逮捕する"],
+["convenient", "便利な"],
+["establish", "を設立する"],
+["cup", "カップ"],
+["mistake", "誤り"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["contact", "接触"],
+["easily", "簡単に"],
+["bicycle", "自転車"],
+["bad", "悪い"],
+["delicious", "おいしい"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["must not", "してはいけない"],
+["still", "まだ"],
+["hand", "を手渡す"],
+["moment", "瞬間"],
+["or", "すなわち，言いかえれば"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["March", "3月"],
+["plant", "植物"],
+["pleased", "喜んで"],
+["standard", "基準"],
+["line", "線"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["seem", "--のように思われる"],
+["not", "でない"],
+["release", "を放出する"],
+["picture", "絵、写真"],
+["holiday", "休日、休暇"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["instead of", "のかわりに"],
+["begin to", "し始める"],
+["leave", "を置いていく"],
+["some", "いくつかの"],
+["kind", "種類"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["rich", "金持ちの"],
+["earn", "をかせぐ"],
+["tooth", "歯"],
+["road", "道"],
+["send", "を送る"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["mean", "意味する"],
+["hill", "丘"],
+["great", "偉大な、すぐれた"],
+["stick", "棒"],
+["quick", "速い"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["square", "正方形の"],
+["friend", "友達"],
+["plant", "植物"],
+["improve", "進歩する"],
+["dictionary", "辞書"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["took", "撮った"],
+["note", "紙幣"],
+["close", "閉じる"],
+["heart", "心"],
+["east", "東"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["finger", "手の指"],
+["understand", "理解する"],
+["common", "共通の"],
+["round", "まわりに"],
+["guest", "客"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["tax", "税，税金"],
+["see", "見る"],
+["tradition", "伝統"],
+["this", "この"],
+["belong", "のものである"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["midnight", "真夜中"],
+["study", "研究，調査"],
+["grandfather", "祖父"],
+["beginning", "最初"],
+["war", "戦争"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["Friday", "金曜日"],
+["tie", "ネクタイ"],
+["would", "だろうに"],
+["in full", "全部"],
+["protect", "を守る，保護する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["iron", "鉄"],
+["rain", "雨"],
+["be", "である、になる"],
+["on", "の上に"],
+["stop", "とまる，停止する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["take", "に乗る"],
+["once", "かつて"],
+["moon", "月"],
+["elementary school", "小学校"],
+["decide to", "しようと決心する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["garage", "車庫"],
+["poor", "貧しい"],
+["lie", "嘘"],
+["list", "表"],
+["say", "を言う"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["decide", "を決める"],
+["wife", "妻"],
+["helpful", "役に立つ"],
+["shape", "形"],
+["pay", "払う"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["stay", "滞在"],
+["progress", "進歩"],
+["keep", "し続ける"],
+["answer", "答え"],
+["watch", "腕時計"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["Japan", "日本"],
+["care", "気にする"],
+["one", "1"],
+["bored", "退屈した"],
+["custom", "習慣"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["too", "--すぎる"],
+["noise", "騒音"],
+["just", "ちょうど、まさに"],
+["go on", "時間が過ぎ去る"],
+["had", "持った"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["be", "ある、いる"],
+["wonder", "不思議"],
+["flat", "平らな"],
+["taught", "教えた"],
+["until", "まで，までは"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["dislike", "嫌う"],
+["accept", "を受け入れる"],
+["sleep", "眠る"],
+["lawyer", "弁護士"],
+["sleep", "眠る，寝ている"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["husband", "夫"],
+["said", "言った（過去形）"],
+["last", "最後の"],
+["survival", "存続，生き残ること"],
+["improve", "を改善する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["help", "手伝う"],
+["think", "考える"],
+["map", "地図"],
+["be about to", "今にもしようとしている"],
+["college", "大学"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["climb", "を登る"],
+["at", "【時刻・年齢】に"],
+["long", "長い"],
+["hard", "かたい"],
+["before", "する前に"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["pretty", "かわいい，きれいな"],
+["for", "として"],
+["hard", "熱心に、一生懸命に"],
+["freely", "自由に"],
+["definitely", "もちろん，確かに"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["dear", "親愛なる"],
+["rest", "休む，眠る"],
+["however", "しかし"],
+["nest", "巣"],
+["disagree", "意見が合わない"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["say", "と書いてある"],
+["rhyme", "韻をふむ"],
+["red", "赤"],
+["steam", "蒸気"],
+["facility", "施設、設備"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["ending", "終わり，結末"],
+["beginner", "初心者"],
+["line", "行，線"],
+["at night", "夜に"],
+["reason", "理由"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["encourage to --", "に--するように促す"],
+["dead", "死んだ"],
+["musician", "音楽家"],
+["experience", "経験、体験"],
+["horizon", "地平線，水平線"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["famous", "有名な"],
+["got", "得た"],
+["history", "歴史"],
+["June", "6月"],
+["sense", "感覚"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["and", "それと"],
+["ready", "用意できている"],
+["honest", "正直な"],
+["mist", "霧"],
+["imagine", "を想像する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["measure", "をはかる"],
+["sunshine", "日光"],
+["pair", "一組"],
+["increase", "を増やす，増大させる"],
+["please", "気に入る，喜ばせる"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["change trains", "電車を乗りかえる"],
+["let's", "--しよう"],
+["something", "なにか"],
+["raw", "生の"],
+["important", "重要な、大切な"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["lovely", "美しい"],
+["she", "彼女は"],
+["building", "建物"],
+["dish", "皿、料理"],
+["another", "ほかの、別の"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["world", "世界"],
+["rapidly", "速く，急速に"],
+["originally", "はじめは"],
+["wisdom", "知恵"],
+["difficult", "難しい"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["after all", "結局"],
+["tired", "疲れて"],
+["language", "言語"],
+["language", "言葉"],
+["warm", "温暖な"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["better", "より良い"],
+["Chinese", "中国語"],
+["side", "側面"],
+["sea", "海"],
+["fat", "太った"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["hear", "を聞く"],
+["traveler", "旅行者"],
+["bed", "ベッド"],
+["healthy", "健康な"],
+["spring", "ばね"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["prize", "賞"],
+["season", "季節"],
+["long", "長い"],
+["growth", "増加"],
+["meaning", "意味"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["eight", "8"],
+["twelve", "12"],
+["dinner", "夕食"],
+["headache", "頭痛"],
+["student", "生徒"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["or", "そうしなければ"],
+["front", "前、前方"],
+["go", "行く"],
+["clearly", "はっきりと"],
+["violence", "暴力"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["lose", "を失う"],
+["unused", "未使用の"],
+["shirt", "シャツ"],
+["English", "英語"],
+["spoke", "話した"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["become", "--になる"],
+["gas", "ガソリン"],
+["cloud", "雲"],
+["carry", "を運ぶ"],
+["afraid", "こわがって"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["protest", "抗議する"],
+["race", "競走"],
+["after", "--の後で"],
+["west", "西"],
+["freedom", "自由"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["enemy", "敵"],
+["wind power", "風力"],
+["very", "非常に"],
+["miss", "を見逃す"],
+["government", "政府"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["busy", "忙しい"],
+["stand", "立つ"],
+["well-known", "有名な"],
+["king", "王様"],
+["health", "健康"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["into", "--の中へ"],
+["bridge", "橋"],
+["circle", "円"],
+["only", "--だけ"],
+["fast", "速い"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["ear", "耳"],
+["cook", "料理する"],
+["example", "例、実例"],
+["fence", "塀"],
+["right", "正しい"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["rainwater", "雨水"],
+["spread", "広がった"],
+["man", "男性、男の人"],
+["heart", "心"],
+["more", "よりもっと"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["hurt", "傷つける"],
+["science", "科学"],
+["two", "2"],
+["front", "前、正面"],
+["then", "そうすると"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["case", "場合"],
+["drink", "を飲む"],
+["sixty", "60"],
+["effective", "効果的な"],
+["tonight", "今夜は"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["in", "中に"],
+["sixteen", "16"],
+["future", "未来"],
+["coin", "硬貨"],
+["sidewalk", "歩道"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["nineteen", "19"],
+["emergency", "緊急事態"],
+["deep", "深い"],
+["almost", "ほとんど"],
+["sky", "空，大空"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["Chinese", "中国語"],
+["leave", "去る"],
+["railway", "鉄道"],
+["would like to --", "に--してほしい"],
+["injure", "を傷つける"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["key", "鍵"],
+["head", "頭"],
+["pale", "青ざめた"],
+["disease", "病気"],
+["illiterate", "読み書きのできない"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["holy", "神聖な"],
+["pick", "選ぶ"],
+["high school", "高校"],
+["fourth", "4番目"],
+["surprised", "驚いた"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["forget", "忘れる"],
+["natural", "自然の"],
+["family", "家族"],
+["in season", "旬で"],
+["fall", "落ちる"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["although", "であるけれど"],
+["metal", "金属"],
+["instead", "そのかわりに"],
+["vacation", "休暇"],
+["eye", "目"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["bath", "風呂"],
+["bean", "豆"],
+["egg", "卵"],
+["courage", "勇気"],
+["enjoy", "を楽しむ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["corner", "かど"],
+["forest", "森、森林"],
+["cloudy", "曇った"],
+["notebook", "ノート"],
+["serious", "重大な"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["snow", "雪"],
+["bread", "パン"],
+["carbon dioxide", "二酸化炭素"],
+["cute", "かわいい"],
+["different", "異なる"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["thousand", "千"],
+["grape", "ブドウ"],
+["number", "番号"],
+["hers", "彼女のもの"],
+["yet", "まだ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["instruction", "指示"],
+["call", "通話"],
+["small", "小さい"],
+["leg", "脚"],
+["city", "市、都会、都会"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["agree", "賛成する"],
+["excited", "わくわくした"],
+["trash", "ごみ、くず"],
+["law", "法律"],
+["valley", "谷"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["monthly", "月に1回の"],
+["six", "6"],
+["move", "動く，引っ越す"],
+["tough", "困難な，難しい"],
+["are", "です、ます"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["spice", "香辛料"],
+["supermarket", "スーパーマーケット"],
+["cousin", "いとこ"],
+["ring", "指輪"],
+["free", "ひまな"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["remind", "を気づかせる"],
+["build", "を建てる"],
+["look forward to ...", "を楽しみに待つ"],
+["president", "大統領"],
+["below", "下に，下記の"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["sentence", "文"],
+["third", "3番目"],
+["like", "のような"],
+["become", "になった"],
+["early", "早い"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["sorry", "残念で"],
+["near", "近くで"],
+["day", "日、１日"],
+["up", "上へ"],
+["don't have to", "しなくてよい"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["usual", "通常の"],
+["each other", "お互いに"],
+["borrow", "借りる"],
+["spend", "費やす"],
+["especially", "特に、とりわけ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["me", "私を"],
+["not at all", "少しもない"],
+["sweet", "甘い"],
+["animal", "動物"],
+["bright", "明るい"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["law", "法律"],
+["condition", "状況"],
+["raise", "手などを挙げる"],
+["That's too bad", "それはいけませんね。"],
+["so far", "これまでは"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["homework", "宿題"],
+["case", "容器"],
+["row", "列"],
+["sink", "沈む"],
+["perform", "演じる"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["surround", "を囲む"],
+["envelope", "封筒"],
+["began", "始めた"],
+["society", "社会"],
+["encourage", "を勇気づける"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["right", "右"],
+["classroom", "教室"],
+["check", "を調べる"],
+["how", "どんな"],
+["accident", "事故"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["reply", "と答える"],
+["feel", "感じる"],
+["third", "3番目"],
+["and", "そして、それから"],
+["nature", "自然"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["universe", "宇宙"],
+["museum", "博物館"],
+["hurt", "を傷つける"],
+["dinosaur", "恐竜"],
+["uncomfortable", "心地の悪い"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["quarter", "4分の1"],
+["ordinary", "ふつうの"],
+["bear", "クマ"],
+["realize", "実現する"],
+["market", "市場"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["roof", "屋根"],
+["out", "外に"],
+["hot", "暑い"],
+["content", "中身"],
+["much", "たくさん"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["tightly", "しっかりと"],
+["from", "【場所】から"],
+["believe", "信じる"],
+["site", "場所"],
+["between", "と--の間で"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["machine", "機械"],
+["farm", "農場"],
+["nuclear", "核の，原子力の"],
+["end", "終わる"],
+["best", "最も良い"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["wish", "を望む"],
+["amazing", "驚くべき"],
+["second", "2番目に"],
+["fast", "速い"],
+["experience", "を経験する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["wonder", "--かなと思う"],
+["May", "5月"],
+["side", "側，面"],
+["thirty", "30"],
+["talk", "話す"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["discover", "発見する"],
+["crowd", "群衆"],
+["best", "最も良い"],
+["extinguisher", "消火器"],
+["how to", "する方法"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["island", "島"],
+["excuse", "許す"],
+["research", "を研究する"],
+["come from", "出身である"],
+["meet", "と会う"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["earthquake", "地震"],
+["realize", "だと気づく"],
+["second", "秒"],
+["shop", "店"],
+["carefully", "注意深く"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["fill", "いっぱいにする"],
+["check out", "を調査する"],
+["lead", "を導く"],
+["come", "になる"],
+["farmer", "農場主"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["in case of", "の場合には"],
+["medium", "中ほどの"],
+["when", "--するとき"],
+["judge", "審判員"],
+["radiation", "放射線"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["affect", "に影響を与える"],
+["easy", "簡単な"],
+["communicate", "連絡する"],
+["circle", "を丸で囲む"],
+["same", "同一の"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["rabbit", "ウサギ"],
+["disabled", "体の不自由な"],
+["selection", "選択"],
+["wild", "野生の"],
+["feature", "特色"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["quietly", "静かに，落ち着いて"],
+["children", "子供たち"],
+["disaster", "災害"],
+["herself", "彼女自身"],
+["scientist", "科学者"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["ice", "氷"],
+["back", "戻って、返して"],
+["national", "国家の"],
+["against", "に対抗して、反対して"],
+["war", "戦争"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["well", "健康な"],
+["climate", "気候"],
+["jump", "跳ぶ"],
+["air conditioner", "冷房"],
+["should", "すべきである"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["dangerous", "危険な"],
+["youth", "若さ"],
+["see", "を見る"],
+["fruit", "果物"],
+["a few", "少数の"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["blow", "吹く"],
+["bought", "買った（過去形）"],
+["because of", "が理由で"],
+["second", "2番目"],
+["smile", "笑う"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["school", "学校"],
+["slowly", "ゆっくりと"],
+["pig", "ブタ"],
+["theater", "劇場"],
+["hope", "を望む"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["poor", "貧乏な"],
+["remember", "を思い出す"],
+["possible", "可能な"],
+["cat", "猫"],
+["colony", "植民地"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["soup", "スープ"],
+["baseball", "野球"],
+["lamp", "明かり"],
+["terrible", "ひどい"],
+["behind", "の後ろに"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["research", "研究"],
+["continue", "続く"],
+["sent", "送った"],
+["close", "を閉じる，終える"],
+["husband", "夫"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["happen", "起こる"],
+["agree with", "に賛成する"],
+["date", "日、日付"],
+["electronic device", "電子機器"],
+["shout", "叫ぶ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["lend", "貸す"],
+["year", "年"],
+["leaf", "葉"],
+["pond", "池"],
+["scared", "こわがって"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["tall", "背が高い"],
+["inner", "内部の，内側の"],
+["spend", "を過ごす"],
+["How much ?", "どれくらいの量？"],
+["conference", "会議"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["mine", "私のもの"],
+["snake", "ヘビ"],
+["neck", "首"],
+["uncle", "おじ"],
+["middle", "真ん中"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["endangered", "絶滅の危機にさらされている"],
+["car", "自動車"],
+["around", "のまわりに"],
+["seventeen", "17"],
+["happy", "幸せな、うれしい、楽しい"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["put", "置く"],
+["around", "のまわりを回って"],
+["plate", "お皿"],
+["operation", "手術"],
+["September", "9月"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["fact", "事実，現実"],
+["speech", "演説"],
+["carefully", "注意深く"],
+["hole", "穴"],
+["outside", "外で"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["gently", "やさしく"],
+["important", "重要な"],
+["tourist", "観光客"],
+["under", "下の"],
+["inside", "内側の"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["chain", "くさり"],
+["plate", "お皿"],
+["summer", "夏"],
+["run out of", "を使い果たす"],
+["free", "自由な"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["How about ~?", "はどうですか？"],
+["handle", "を処理する"],
+["little", "小さい，かわいい"],
+["professor", "教授"],
+["can", "【能力・可能】することができる"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["How much ~?", "はいくらですか？"],
+["product", "製品"],
+["thousand", "千"],
+["brother", "兄弟"],
+["bother", "面倒"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["luck", "運、幸運"],
+["queen", "女王"],
+["somewhere", "どこかに"],
+["beside", "の側に"],
+["fine", "元気な"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["at", "【場所】に、で"],
+["subway", "地下鉄"],
+["Saturday", "土曜日"],
+["painter", "画家"],
+["fossil", "化石"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["engineer", "開発者"],
+["lake", "湖"],
+["theater", "劇場"],
+["over here", "こちらに"],
+["heat", "熱"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["sure", "もちろん"],
+["touch", "にさわる"],
+["half", "半分だけ"],
+["indeed", "実に"],
+["painting", "絵をかくこと"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["action", "行動"],
+["away", "なくなって"],
+["think", "考える"],
+["cry", "泣く"],
+["human", "人間、人"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["suddenly", "突然に"],
+["everyone", "みんな"],
+["add", "加える"],
+["behavior", "ふるまい"],
+["eleven", "11"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["eventually", "最後には"],
+["people", "人々"],
+["palace", "宮殿"],
+["reach", "に着く，到着する"],
+["discrimination", "差別"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["silent", "静かな"],
+["together", "一緒に"],
+["local", "地方の、地元の"],
+["pm", "午後"],
+["rule", "規則"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["born", "生まれる"],
+["peace", "平和"],
+["grade", "等級"],
+["police", "警察官"],
+["each", "各々"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["really", "本当に、実際に"],
+["said", "言った"],
+["my", "私の"],
+["take care of", "を大事にする"],
+["draw", "描く"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["run away", "逃げる"],
+["life", "人生"],
+["such", "そのような"],
+["given", "与えた"],
+["climb", "登る"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["new", "新しい"],
+["this way", "このように"],
+["rainy", "雨降りの"],
+["even", "--さえ"],
+["respect", "を尊敬する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["pork", "豚肉"],
+["floor", "階"],
+["shadow", "影"],
+["graduation", "卒業"],
+["people", "人々"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["grass", "草"],
+["shopping", "買物"],
+["sentence", "文"],
+["Tuesday", "火曜日"],
+["above", "上に，上記の"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["heard", "聞いた"],
+["shelter", "避難所"],
+["useful", "役に立つ"],
+["ocean", "大洋，海"],
+["ninth", "9番目"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["tell", "伝える"],
+["mix", "混ぜる"],
+["practice", "練習"],
+["return", "帰る、戻る"],
+["idea", "考え"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["clean", "きれいな、清潔な"],
+["final", "最後の"],
+["another", "もう1つ、一人の"],
+["domestic", "国内の"],
+["species", "種"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["mouse", "ネズミ、ハツカネズミ"],
+["beach", "浜、海辺"],
+["fun", "楽しみ"],
+["cow", "ウシ"],
+["feel free to", "遠慮なくする"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["strike", "打つ"],
+["fall down", "倒れる"],
+["hold", "を開く、行う"],
+["driver", "運転手"],
+["sure", "確信して"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["necessary", "必要な"],
+["gather", "を集める"],
+["never", "今までに一度もしない"],
+["thick", "厚い"],
+["lip", "唇"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["any", "どれもない"],
+["green", "緑"],
+["just", "たった今"],
+["have", "を開催する"],
+["wear", "を着ている"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["practice", "を練習する"],
+["also", "さらに"],
+["park", "公園"],
+["Sunday", "日曜日"],
+["change", "変わる"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["then", "そのとき"],
+["out", "外に"],
+["merchant", "商人"],
+["toy", "おもちゃ"],
+["soil", "土"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["autumn", "秋"],
+["stylish", "おしゃれな"],
+["after", "--の後に"],
+["strict", "厳しい"],
+["weak", "弱い，かすかな"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["consumer", "消費者"],
+["produce", "を生産する"],
+["army", "陸軍"],
+["weekly", "週刊の"],
+["warm", "温かい"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["survey", "調査"],
+["road", "道路"],
+["problem", "問題"],
+["learn", "学ぶ"],
+["elderly", "年配の"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["horse", "馬"],
+["fly", "飛ぶ"],
+["early", "早く"],
+["discuss", "話し合う"],
+["be going to", "するつもりだ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["chicken", "鶏肉"],
+["have to", "しなければならない"],
+["latest", "最新の"],
+["rainy", "雨降りの"],
+["across", "横断して"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["farmer", "農家"],
+["dictionary", "辞書"],
+["come", "来る"],
+["mother", "母"],
+["wave", "波"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["make", "を--の状態にする"],
+["fall", "転ぶ、転倒する"],
+["after", "--のあとに"],
+["introduce", "紹介する"],
+["both", "両方"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["first", "1番め、最初"],
+["stationery", "文房具"],
+["shy", "恥ずかしがりの"],
+["turn", "順番"],
+["for now", "今のところは"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["slowly", "遅く"],
+["lie", "横たわる"],
+["jewel", "宝石"],
+["doll", "人形"],
+["along", "に沿って"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["wet", "濡れている"],
+["clerk", "店員"],
+["old", "年をとった"],
+["extinction", "絶滅"],
+["invite", "を招待する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["made", "作った（過去形）"],
+["hunting", "狩り"],
+["in the open air", "屋外で"],
+["fire", "を首にする，解雇する"],
+["appear", "現れる"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["as for", "について言えば"],
+["use", "使う"],
+["long", "長い"],
+["shake", "震える"],
+["legacy", "遺産"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["straight", "真っすぐに"],
+["citizen", "市民"],
+["unique", "独特な"],
+["rabbit", "ウサギ"],
+["flower", "花"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["fourteen", "14"],
+["care", "世話"],
+["surely", "確かに"],
+["tooth", "歯"],
+["age", "年齢"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["join", "参加する"],
+["dish", "皿"],
+["kit", "道具一式"],
+["snowy", "雪の降る"],
+["be ready for", "の用意ができている"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["import", "を輸入する"],
+["over", "の向こうへ"],
+["shoe", "くつ"],
+["good", "元気な"],
+["life", "生命"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["million", "100万"],
+["blue", "青い"],
+["thought", "考え"],
+["before", "以前に"],
+["during", "--の間"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["into", "--の中へ"],
+["promise", "約束"],
+["borrow", "を借りる"],
+["with", "--と一緒に"],
+["fun", "面白い"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["clean", "きれいにする"],
+["satisfy", "を満足させる"],
+["know", "を知っている"],
+["music", "音楽"],
+["clean", "をそうじする"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["neighbor", "隣人"],
+["listen", "聞く"],
+["it", "それは"],
+["food", "食べ物"],
+["pass", "を通り過ぎる"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["go by", "通り過ぎる"],
+["fortunately", "幸運にも"],
+["extend", "を広げる"],
+["too", "もまた"],
+["actually", "実は，本当は"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["zone", "地帯"],
+["take", "取る"],
+["those", "あれらの"],
+["Thursday", "木曜日"],
+["receive", "を受け取る"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["ninety", "90"],
+["successful", "成功した"],
+["seem", "--の様に見える"],
+["sign", "合図，標識"],
+["store", "を蓄える"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["answer", "に答える"],
+["exhibition", "展示"],
+["price", "値段"],
+["limited", "限られた"],
+["prince", "王子"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["weak", "弱い"],
+["frog", "カエル"],
+["different", "色々な、違った"],
+["reading", "読書"],
+["these", "これらの"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["burden", "負担，重荷"],
+["worry", "心配させる"],
+["attend", "に通う，に出席する"],
+["fond", "好きで"],
+["look", "見る"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["hospital", "病院"],
+["perfect", "完全な"],
+["actor", "俳優"],
+["yesterday", "昨日"],
+["seasonal", "季節の"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["discover", "を発見する"],
+["pass by", "通り過ぎる"],
+["island", "島"],
+["go on", "する，始める"],
+["buy", "を買う"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["hear", "聞く"],
+["advise", "助言する"],
+["invent", "を発明する"],
+["fiction", "小説"],
+["door", "戸"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["most", "最も"],
+["report", "報告"],
+["rush", "殺到"],
+["human rights", "人権"],
+["hat", "帽子"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["quiet", "静かな"],
+["absent", "欠席の"],
+["work", "仕事"],
+["five", "5"],
+["discussion", "討論"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["illegal", "違法な"],
+["pursue", "を追い求める"],
+["everywhere", "どこでも"],
+["destroy", "を破壊する"],
+["since", "--以来"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["couple", "夫婦"],
+["country", "国"],
+["at", "によって"],
+["first", "はじめて"],
+["as", "として"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["somehow", "何らかの形で"],
+["tear", "涙"],
+["development", "開発"],
+["told", "に伝えた"],
+["silver", "銀"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["beautiful", "美しい"],
+["beyond", "をこえたところに"],
+["sugar", "砂糖"],
+["device", "装置"],
+["lullaby", "子守歌"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["photograph", "写真"],
+["begin", "始まる"],
+["age", "時代"],
+["angry", "怒った，腹を立てた"],
+["angry", "怒って"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["alive", "生きて"],
+["role", "役、役割"],
+["sick", "病気の"],
+["north", "北"],
+["always", "いつも"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["resource", "資源"],
+["tomorrow", "明日"],
+["so that --", "とてもなので--だ"],
+["leg", "脚"],
+["west", "西"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["luggage", "手荷物"],
+["twice", "2回"],
+["mirror", "鏡"],
+["apron", "エプロン、前かけ"],
+["sustainable", "存続可能な"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["by", "によって"],
+["trip", "旅行"],
+["many", "多くの"],
+["graduate", "卒業する"],
+["an", "1つの、1人の"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["from", "【時間】から"],
+["may", "かもしれない"],
+["hungry", "空腹の、飢えた"],
+["heard", "聞いた"],
+["hundred", "百"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["themselves", "彼ら自身"],
+["is", "にいる、ある"],
+["foolish", "愚かな"],
+["play", "を演じる"],
+["grew", "育った"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["university", "大学"],
+["chemical", "化学物質"],
+["zoo", "動物園"],
+["nothing", "何もない"],
+["that", "あれ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["habit", "習慣"],
+["get out", "外へ出る"],
+["ancient", "古代の"],
+["paid", "支払い済みの"],
+["understood", "を理解した"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["light", "軽い"],
+["burn", "を燃やす"],
+["gave", "与えた"],
+["various", "いろいろな"],
+["forth", "前へ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["order", "注文する"],
+["hit", "打つ"],
+["wrote", "書いた"],
+["play", "劇"],
+["select", "を選ぶ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["funny", "可笑しい"],
+["song", "歌"],
+["yet", "まだ，今のところは"],
+["hear of", "について聞く"],
+["third", "3分の1"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["south", "南"],
+["shoulder", "肩"],
+["technology", "科学技術"],
+["today", "今日、現在"],
+["tree", "木"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["host", "主人"],
+["busy", "忙しい"],
+["by", "までに"],
+["bird", "鳥"],
+["diary", "日記"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["show", "を見せる"],
+["pleasure", "喜び"],
+["sold", "売った"],
+["seven", "7"],
+["creative", "創造力のある"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["success", "成功"],
+["battery", "電池"],
+["bake", "焼く"],
+["arrow", "矢"],
+["weather", "天気"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["wrong", "間違った"],
+["sixth", "6番目"],
+["wake", "目が覚める"],
+["drive", "運転する"],
+["minute", "分"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["anyway", "ともかく"],
+["surprisingly", "驚いたことには"],
+["next-door", "隣の家、隣の"],
+["three", "3"],
+["paint", "描く"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["translation", "翻訳"],
+["sit", "座る"],
+["loss", "失うこと，喪失"],
+["go out", "外出する"],
+["trade", "貿易"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["century", "世紀"],
+["Japanese", "日本語、日本人"],
+["by", "【場所】のそばに"],
+["about", "およそ、約、ごろ"],
+["hall", "廊下"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["resident", "住民，居住者"],
+["every year", "毎年"],
+["king", "王様"],
+["all", "全部、全員、全て、みな"],
+["electronic", "電子の"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["arrive", "到着する"],
+["foot", "足"],
+["poem", "詩"],
+["other", "他の"],
+["held", "握った"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["statue", "像"],
+["candle", "ろうそく"],
+["outside", "外で"],
+["umbrella", "傘"],
+["held", "開催した"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["strong", "強い"],
+["expensive", "高価な，費用のかかる"],
+["child", "子供"],
+["paper", "紙"],
+["shoot", "撃つ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["uniform", "制服"],
+["prepared", "用意ができている"],
+["lost", "負けた"],
+["protest", "抗議(運動)"],
+["felt", "感じた"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["peace", "平和"],
+["see", "が分かる"],
+["lonely", "さびしい"],
+["these", "これらの"],
+["event", "行事"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["electricity", "電力"],
+["great", "すばらしい"],
+["shade", "陰，日陰"],
+["it", "それを"],
+["interdependent", "相互に依存している"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["salt", "塩"],
+["begin", "を始める"],
+["also", "もまた"],
+["any", "どんなでも"],
+["hope", "望む"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["cut", "切る"],
+["abroad", "外国に、海外に"],
+["develop", "を発達させる"],
+["found", "を見つけた"],
+["in those days", "当時は"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["bath", "入浴"],
+["neighbor", "近所の人"],
+["open", "を開ける"],
+["ahead", "前方に"],
+["apply", "当てはまる"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["die", "死ぬ"],
+["nice", "良い"],
+["winner", "勝者，受賞者"],
+["overseas", "外国へ"],
+["waste", "ごみ，廃棄物"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["depend", "頼る"],
+["down", "下に"],
+["right", "権利"],
+["desk", "机"],
+["more and more", "ますます多くの"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["mouth", "口"],
+["Monday", "月曜日"],
+["on", "【場所】の上に"],
+["fine", "元気な，晴れた"],
+["certainly", "確かに"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["if", "もし--ならば"],
+["though", "だけれども"],
+["exception", "例外"],
+["contact", "と連絡をとる"],
+["could", "できた"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["worth", "の価値がある"],
+["make all the difference", "大きなちがいを生む"],
+["let", "--に--をさせる"],
+["because", "だから、なので"],
+["happiness", "幸福"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["smoke", "煙"],
+["turn", "向く、曲がる"],
+["swim", "泳ぐ"],
+["enough", "十分な、必要なだけの"],
+["cultural", "文化の"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["need", "を必要とする"],
+["daily", "日常の"],
+["do one's best", "最善をつくす"],
+["brain", "頭脳"],
+["introduce", "を紹介する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["look", "に見える"],
+["simple", "単純な，簡単な"],
+["purple", "紫色"],
+["heavy", "重い"],
+["drop", "落ちる"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["thing", "もの、こと"],
+["tiny", "小さな"],
+["cannot", "できない"],
+["film", "映画"],
+["noon", "正午"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["address", "住所"],
+["progress", "進歩"],
+["image", "画像，印象"],
+["do", "暮らす"],
+["arrive", "到着する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["wide", "幅が広い"],
+["nuclear power", "原子力"],
+["wave", "波"],
+["audience", "聴衆，観客"],
+["its", "それの、その"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["snow", "雪"],
+["junior high school", "中学校"],
+["choose", "選ぶ"],
+["eleventh", "11番目"],
+["reply", "返信する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["will", "--するつもり"],
+["problem", "問題"],
+["wrap", "を包む"],
+["saw", "見た（過去形）"],
+["nurse", "看護婦"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["collect", "を集める"],
+["sell", "を売る"],
+["interesting", "面白い"],
+["yet", "もう，すでに"],
+["eat", "を食べる、食事をする"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["of", "--の"],
+["flight", "飛行"],
+["need", "困っている状態、貧困"],
+["for example", "例えば"],
+["market", "市場"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["hopeful", "希望を持っている"],
+["salad", "サラダ"],
+["morning", "朝"],
+["drama", "劇"],
+["where", "どこ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["relate", "を--に関係させる"],
+["enter", "入る"],
+["away", "はなれて、去って"],
+["own", "自分自身の"],
+["number", "数、数字"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["date", "日付"],
+["recognize", "だと分かる"],
+["mark", "印"],
+["influence", "に影響を及ぼす"],
+["be amazed at", "に驚かされる"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["precious", "貴重な"],
+["twenty", "20"],
+["kind", "親切な"],
+["as", "のような"],
+["hurry", "急ぐ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["they", "彼らは"],
+["sister", "姉妹"],
+["sea", "海"],
+["charge", "を充電する"],
+["ecosystem", "生態系"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["delicious", "おいしい"],
+["what to", "何をすべきか"],
+["be different from", "とはちがっている"],
+["already", "すでに，もう"],
+["every", "毎、ごとに"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["eighty", "80"],
+["history", "歴史"],
+["shop", "店"],
+["fox", "キツネ"],
+["exciting", "興奮させる"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["work out", "運動する"],
+["sad", "悲しい"],
+["control", "を管理する"],
+["nose", "鼻"],
+["negative", "否定的な，良くない"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["salt", "塩，食塩"],
+["pal", "友だち"],
+["ice", "氷"],
+["twelfth", "12番目"],
+["sleepy", "眠い"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["go through", "人生を送る"],
+["spelling", "綴り"],
+["loud", "声の大きい"],
+["smile", "ほほえむ"],
+["shoulder", "肩"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["math", "数学"],
+["get over", "を乗りこえる"],
+["at", "【方向】をめがけて、に向かって"],
+["root", "根"],
+["learn", "学ぶ、習う"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["by", "【手段・方法・原因】によって"],
+["unfair", "不公平な，不当な"],
+["round", "丸い"],
+["stay", "滞在する"],
+["breed", "を飼育する，繁殖する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["way", "方法"],
+["which", "どちらの"],
+["theirs", "彼らのもの"],
+["show", "を見せる"],
+["lucky", "幸運な"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["live", "生きる"],
+["cover", "覆う"],
+["farmer", "農場主"],
+["effort", "努力"],
+["found", "を創立する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["awake", "目が覚める"],
+["damage", "被害"],
+["moreover", "さらに"],
+["magazine", "雑誌"],
+["donate", "を寄付する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["ground", "地面"],
+["right", "ちょうど、すぐに"],
+["knowledge", "知識"],
+["unhappy", "不幸な"],
+["excuse", "を許す"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["umbrella", "かさ"],
+["go back", "帰る，戻る"],
+["run", "を主催する"],
+["catch", "を捕まえる"],
+["marry", "結婚する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["severe", "厳しい"],
+["child", "子供"],
+["lost", "道に迷った"],
+["even if", "たとえ--だとしても"],
+["east", "東"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["follower", "支持者"],
+["good", "良い"],
+["follow", "に従う"],
+["outside", "の外側に"],
+["employee", "従業員"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["few", "少しの"],
+["pass", "を手渡す"],
+["four", "4"],
+["drum", "太鼓、ドラム"],
+["plan", "を計画する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["the", "その"],
+["than", "よりも"],
+["difficult", "難しい"],
+["himself", "彼自身を"],
+["math", "数学"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["wish", "望む"],
+["miss", "さびしく思う"],
+["baby", "赤ん坊"],
+["brush", "筆"],
+["mountain", "山"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["tower", "塔"],
+["get", "を得る"],
+["stand up", "立ち上がる"],
+["textbook", "教科書"],
+["joy", "喜び"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["connect", "を結びつける"],
+["but", "しかし"],
+["weigh", "重さがある"],
+["airport", "空港"],
+["grandmother", "祖母"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["bike", "自転車"],
+["other", "ほかの"],
+["study", "を勉強する"],
+["over", "の向こう側に"],
+["cheap", "安い"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["peaceful", "平和な"],
+["office", "事務所"],
+["can", "することがあり得る"],
+["modern", "現代的な"],
+["announcement", "発表"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["clerk", "店員"],
+["honest", "正直な"],
+["capture", "を捕まえる"],
+["clothes", "衣服"],
+["like", "を好む"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["convenience", "便利"],
+["story", "物語"],
+["article", "記事"],
+["matter", "問題，困ったこと"],
+["brown", "茶色の"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["low", "低い"],
+["whole", "すべての"],
+["ear", "耳"],
+["call", "に電話をかける"],
+["capital", "首都"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["pain", "痛み"],
+["swimming", "水泳"],
+["each", "それぞれの、各自の"],
+["talk", "話す"],
+["environment", "環境，状況"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["sheep", "ヒツジ"],
+["signal", "信号"],
+["could", "できた"],
+["too to --", "--するにはすぎる"],
+["central", "中心の"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["evacuation", "避難"],
+["time", "時間"],
+["rain", "雨"],
+["elephant", "ゾウ"],
+["there", "そこに"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["general", "一般的な"],
+["lesson", "授業"],
+["south", "南"],
+["aunt", "おば"],
+["pig", "ブタ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["ill", "病気の"],
+["movement", "運動"],
+["design", "を設計する"],
+["sun", "太陽"],
+["weapon", "武器"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["get fired", "解雇される"],
+["survive", "生き残る"],
+["decrease", "減少する"],
+["fall", "落ちる，降る"],
+["necessary", "必要な"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["future", "未来"],
+["so", "とても"],
+["same", "同じもの"],
+["job", "仕事"],
+["bag", "かばん"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["mining", "採鉱，採掘"],
+["crazy", "気の狂った"],
+["fish", "魚"],
+["February", "2月"],
+["him", "彼を"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["grow", "成長する"],
+["river", "川"],
+["soon", "すぐに"],
+["senior", "年上の，上級の"],
+["cousin", "いとこ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["for sale", "売り物の"],
+["fever", "熱"],
+["newspaper", "新聞"],
+["money", "お金"],
+["letter", "手紙"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["birthday", "誕生日"],
+["to", "【方向・到達】の方へ"],
+["forty", "40"],
+["every", "どれもみな"],
+["depend on", "に頼る"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["use", "使う"],
+["eye", "目、視力"],
+["hair", "髪"],
+["spell", "をつづる"],
+["lose", "負ける"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["live", "住む"],
+["month", "月、１か月"],
+["change", "を変える"],
+["kept", "し続けた"],
+["help", "を手伝う、助ける"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["swimming", "水泳"],
+["more than", "より多くの"],
+["but", "しかし、けれども"],
+["die out", "絶滅する"],
+["sometime", "いつか"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["even", "でさえ"],
+["host", "主人"],
+["when", "するとき"],
+["thank", "に感謝する"],
+["fold", "を折る，折りたたむ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["church", "教会"],
+["me", "私に"],
+["cake", "ケーキ"],
+["rock", "岩"],
+["town", "町"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["angle", "角度"],
+["well-off", "裕福な"],
+["area", "区域、場所、地域"],
+["vegetable", "野菜"],
+["ship", "船"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["boy", "少年"],
+["playful", "楽しげな"],
+["lazy", "怠け者の"],
+["rise", "のぼる、上がる、上昇する"],
+["ashamed", "恥じて"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["pork", "豚肉"],
+["woke", "目が覚めた"],
+["over", "向こうへ"],
+["made", "作った"],
+["advice", "忠告"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["place", "場所"],
+["mountain", "山"],
+["put", "を置く"],
+["classmate", "同級生"],
+["find", "を発見する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["December", "12月"],
+["create", "を創造する"],
+["built", "を建てた"],
+["burn", "を燃やす"],
+["rat", "ネズミ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["if", "もし--ならば"],
+["point", "特徴，論点"],
+["horse", "馬"],
+["result", "結果"],
+["rose", "昇った"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["he", "彼は"],
+["half", "半分、2分の1"],
+["business", "商売"],
+["inventor", "発明家"],
+["personal", "個人の"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["poet", "詩人"],
+["alone", "独りで"],
+["popular", "人気の"],
+["researcher", "研究者"],
+["ate", "食べた（過去形）"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["relation", "関係"],
+["information", "情報"],
+["surprise", "驚くべきこと"],
+["popular", "人気のある"],
+["interested in", "興味をもっている"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["evening", "夕方"],
+["medicine", "薬"],
+["arm", "腕"],
+["culture", "文化"],
+["here", "ここに"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["take", "連れて行く"],
+["feedback", "意見"],
+["gun", "鉄砲"],
+["parking lot", "駐車場"],
+["hold", "をつかむ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["bright", "明るい"],
+["grow", "成長する"],
+["hour", "1時間"],
+["dry", "乾く"],
+["drop out", "中退する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["already", "すでに"],
+["fresh", "新鮮な"],
+["brush", "をみがく"],
+["be in danger of", "の危険にさらされている"],
+["net", "網"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["plastic bag", "ビニールぶくろ"],
+["came", "来た（過去形）"],
+["hour", "時刻"],
+["real", "本当の"],
+["around", "の近くに"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["evacuation drill", "避難訓練"],
+["remove", "を取り除く"],
+["speak", "を話す"],
+["in front of", "の前に"],
+["reservation", "予約"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["sweet", "易しい"],
+["independence", "独立"],
+["textbook", "教科書"],
+["national", "国の、国家の"],
+["newspaper", "新聞"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["about", "について、に関する"],
+["billion", "10億"],
+["is", "です、ます"],
+["after", "にならって、ちなんで"],
+["art", "美術"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["boil", "ゆでる，煮る"],
+["beef", "牛肉"],
+["funny", "おかしな"],
+["course", "進路"],
+["finally", "ついに，やっと"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["relationship", "関係"],
+["never", "決してない"],
+["run", "走る"],
+["musical", "音楽の"],
+["ride", "乗る"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["a little", "少し"],
+["excited", "興奮した"],
+["certain", "確かな"],
+["dam", "ダム"],
+["focus", "集中する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["spread", "を広げる"],
+["tiny", "ごく小さな"],
+["because", "なぜなら"],
+["kind(s) of --", "種類の--"],
+["for", "にとって"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["treasure", "宝物"],
+["abroad", "外国へ"],
+["question", "質問"],
+["nine", "9"],
+["old", "古い"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["else", "その他に"],
+["and so on", "など"],
+["do well", "元気になる"],
+["forget", "を忘れる"],
+["century", "世紀"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["bookstore", "本屋"],
+["everywhere", "どこでも"],
+["eighteen", "18"],
+["gift", "贈り物"],
+["check", "検査"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["ride", "乗る"],
+["with a smile", "笑って"],
+["succeed", "成功する"],
+["smell", "においがする"],
+["transport", "を輸送する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["sound", "に聞こえる"],
+["Japanese", "日本の"],
+["positive", "前向きな"],
+["solve", "を解決する"],
+["meaning", "意味"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["may", "してもよい"],
+["aunt", "おば"],
+["uncle", "おじ"],
+["still", "まだ"],
+["I", "私は[が]"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["line", "列、並び"],
+["share", "を共有する"],
+["towel", "タオル"],
+["fifteen", "15"],
+["rest", "休息"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["become", "になる"],
+["doctor", "医者"],
+["later", "--の後で"],
+["perhaps", "多分"],
+["feel like ~ing", "したい気がする"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["November", "11月"],
+["dog", "イヌ"],
+["pencil", "鉛筆"],
+["specific", "特定の"],
+["bit", "少し"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["scientist", "科学者"],
+["after a while", "しばらくして"],
+["silk", "絹"],
+["cloudy", "曇った"],
+["away", "離れて"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["through", "を通り抜けて"],
+["misunderstand", "を誤解する"],
+["telephone", "電話"],
+["change", "変化"],
+["listen", "聴く"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["relate to --", "を--に関係させる"],
+["port", "港"],
+["hundred", "百"],
+["can", "--できる"],
+["from abroad", "外国から"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["common", "共通の"],
+["believe", "信じる"],
+["laugh", "笑う"],
+["draw", "描く、引く"],
+["clothes", "服"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["pencil", "えんぴつ"],
+["Bye for now", "さようなら"],
+["plan", "を計画する"],
+["among", "の中で"],
+["nose", "鼻"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["sure", "確信して"],
+["special", "特別の"],
+["period", "期間、時間"],
+["coal", "石炭"],
+["hard", "一生懸命に"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["happily", "幸せに，楽しく"],
+["fight", "たたかう"],
+["once", "かつて"],
+["cloth", "布，服地"],
+["give", "を与える、渡す"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["invention", "発明"],
+["this", "これ"],
+["lake", "湖"],
+["parent", "親"],
+["damage", "に損害を与える"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["ever", "今まで，かつて"],
+["be afraid to", "するのがこわい"],
+["feather", "羽"],
+["name", "名前"],
+["eat out", "外食する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["recently", "最近"],
+["want", "欲しい"],
+["long ago", "ずっと前に"],
+["skill", "技術"],
+["train", "列車"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["quiet", "静かな"],
+["case", "事例"],
+["preserve", "を保存する"],
+["life", "生活"],
+["ask a favor", "にお願いする"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["wide", "幅の広い"],
+["mirror", "鏡"],
+["sailor", "船員"],
+["all over", "の至るところで"],
+["as a result", "結果として"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["hobby", "趣味"],
+["January", "1月"],
+["sent", "送った"],
+["cool", "かっこいい"],
+["sleep", "眠る"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["bring", "持って来る"],
+["reason", "理由"],
+["sometimes", "ときどき"],
+["class", "授業"],
+["cry", "泣く"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["end", "最後"],
+["trust", "を信用する"],
+["north", "北"],
+["yen", "円"],
+["feel", "と感じる"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["include", "を含む"],
+["flour", "小麦粉"],
+["cloth", "布"],
+["event", "行事"],
+["queen", "女王"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["sight", "視界"],
+["Could you?", "してくださいませんか？"],
+["light", "光"],
+["bomb", "爆弾"],
+["save", "を節約する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["save", "を救う"],
+["short", "短い"],
+["seventy", "70"],
+["on the way", "帰る途中で"],
+["push", "を押す"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["star", "星"],
+["knew", "知っていた"],
+["player", "選手"],
+["mind", "精神"],
+["choose", "を選ぶ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["amount", "量，額"],
+["won", "勝った"],
+["beer", "ビール"],
+["traditional", "伝統的な"],
+["quickly", "すぐに"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["foolish", "愚かな"],
+["hungry", "空腹の"],
+["try", "を試す"],
+["table", "つくえ"],
+["police officer", "警察官"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["stop", "止める"],
+["street", "通り"],
+["turn into", "に変わる"],
+["of course", "もちろん"],
+["word", "言葉"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["junior", "年下の"],
+["tiger", "トラ"],
+["debate", "討論"],
+["art", "芸術"],
+["more than", "より多い"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["tell", "に話す"],
+["neither", "--も--もない"],
+["scary", "恐ろしい"],
+["apple", "りんご"],
+["rhythm", "リズム，調子"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["last", "最後の"],
+["right away", "すぐに"],
+["era", "時代"],
+["oil", "油，石油"],
+["land", "土地"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["cold", "冷たい、寒い"],
+["left", "去った"],
+["early", "早く"],
+["stamp", "切手"],
+["keep", "を保つ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["glacier", "氷河"],
+["river", "川"],
+["get", "着く、到着する"],
+["spring", "春"],
+["bear", "クマ"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["wonder", "不思議に思う"],
+["monkey", "サル"],
+["body", "身体"],
+["breakfast", "朝食"],
+["set", "置く"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["girl", "少女"],
+["similar", "同じような"],
+["title", "題名，表題"],
+["eraser", "消しゴム"],
+["sacred", "神聖な"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["horror", "恐怖"],
+["disappear", "姿を消す、消滅する"],
+["see", "に会う"],
+["blind", "目の見えない"],
+["magazine", "雑誌"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["fire", "火"],
+["rice", "米、ご飯"],
+["clever", "利口な"],
+["many", "たくさんの"],
+["call back", "折り返し電話する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["fall", "秋"],
+["syllable", "音節"],
+["dream", "夢"],
+["barber", "散髪屋"],
+["link", "接続"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["countryside", "田舎"],
+["ruler", "定規"],
+["violence", "暴力"],
+["arm", "腕"],
+["teacher", "先生、教師"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["explain", "説明する"],
+["often", "よく"],
+["guess", "を推測する"],
+["customer", "顧客"],
+["am", "です、ます"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["lunch", "昼食"],
+["face", "顔"],
+["honey", "蜂蜜"],
+["big", "大きい"],
+["functional", "実用的な"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["directly", "直接に"],
+["connect", "つながる"],
+["piece", "断片"],
+["must", "しなければならない"],
+["drove", "運転した"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["career", "職業"],
+["little by little", "少しずつ"],
+["the globe", "地球"],
+["die", "死ぬ"],
+["populous", "人口の多い"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["fifty", "50"],
+["mayor", "市長"],
+["hat", "帽子"],
+["those", "あれらの"],
+["chair", "いす"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["airplane", "飛行機"],
+["hope to", "したいと願う"],
+["period", "時代"],
+["past", "過去の"],
+["mouth", "口"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["twice", "2倍、2度"],
+["grand", "壮大な"],
+["glad", "うれしい"],
+["friendly", "好意的な"],
+["relatively", "比較的"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["cancer", "がん"],
+["light", "光"],
+["sunny", "晴れの"],
+["guide", "を案内する"],
+["tea", "お茶"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["far", "遠くに"],
+["imagine", "想像する"],
+["strange", "奇妙な"],
+["thousands of", "何千もの"],
+["black", "黒い"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["their", "彼らの"],
+["bill", "請求書"],
+["guide", "案内人"],
+["mini", "小型の"],
+["rest", "残り"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["favorite", "好きな、お気に入りの"],
+["supply", "供給"],
+["safely", "安全に"],
+["up until", "まで"],
+["point", "点"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["factory", "工場"],
+["ban", "を禁止する"],
+["That's very kind of you", "親切にありがとうございます"],
+["border", "国境"],
+["explain", "を説明する"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["question", "質問"],
+["fool", "馬鹿"],
+["less", "もっと少なく"],
+["tenth", "10番目"],
+["natural", "自然の"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["kill", "を殺す"],
+["gym", "体育館"],
+["soft", "やわらかい"],
+["hand", "手"],
+["be interested in", "に興味がある"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["step", "足元，階段"],
+["pick", "を摘む"],
+["are", "ある、いる"],
+["garbage", "ゴミ"],
+["drop", "を落とす"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["more", "もっと"],
+["house", "家、住宅"],
+["delivery", "配達"],
+["fifth", "5番目"],
+["not always", "いつもとは限らない"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["overseas", "海外の"],
+["around", "のあちこちに"],
+["god", "神"],
+["spread", "広がる，広まる"],
+["grandmother", "祖母"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["old", "古い"],
+["full", "完全な、完ぺきな、最適な"],
+["again", "もう一度、再び、また"],
+["April", "４月"],
+["ago", "--の前に"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["comedy", "喜劇"],
+["childhood", "子供のころ"],
+["interest", "興味"],
+["fail", "失敗する"],
+["wake up", "目を覚ます"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["finish", "を終える"],
+["temple", "寺"],
+["heritage", "遺産"],
+["memory", "記憶"],
+["are", "にいる、ある"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["fourteenth", "14番目"],
+["calm", "落ちついた"],
+["How long ?", "どれくらいの長さ？"],
+["according to", "によれば"],
+["eighth", "8番目"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["shaking", "揺れ"],
+["hall", "会館、ホール"],
+["work", "仕事"],
+["usually", "普段、ふつう"],
+["have", "を食べる、飲む"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["stranger", "見知らぬ人"],
+["in the middle of", "の真ん中に"],
+["someone", "だれか，ある人"],
+["careful", "注意深い"],
+["police", "警察"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["box", "箱"],
+["his", "彼のもの"],
+["all", "全ての、全部の"],
+["for one thing", "1つには"],
+["letter", "手紙"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["wind", "風"],
+["knife", "ナイフ"],
+["build", "を建てる"],
+["secret", "秘密"],
+["twentieth", "20番目"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["maybe", "たぶん、もしかすると"],
+["little", "ほとんど--ない"],
+["move", "を動かす"],
+["wait", "待つ"],
+["village", "町、村"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["person", "人"],
+["exam", "試験"],
+["quite", "かなり，相当"],
+["daughter", "娘"],
+["desert", "砂漠"],
+   ]},
+  {pattern:"  ",
+   examples:[
+["brown", "茶色"],
+["person", "人，個人"],
+["myself", "私自身"],
+["meat", "肉"],
+["announce", "を発表する"],
+   ]},
+
 ];
 
-const STORAGE_KEY = 'shukatsu_v1';
-let state = {};
-function idFor(ch, idx){ return `ch${ch}-item${idx}`; }
+const cards = document.getElementById('cards');
+let voices = [];
+let speechRate = 1.0; // 再生スピード
 
-function loadState(){ try { state = JSON.parse(localStorage.getItem(STORAGE_KEY))||{}; } catch(e){ state={}; } }
-function saveState(){ 
-    const now = Date.now();
-    Object.keys(state).forEach(key => {
-        if (state[key].checked || state[key].comment) {
-             state[key].savedAt = now;
-        }
-    });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); 
-    flashMessage('保存しました'); 
-    renderCurrent(); 
+function populateVoices() {
+  voices = speechSynthesis.getVoices();
 }
-function clearState(){ if(!confirm('チェックとコメントをすべて消去しますか？')) return; state={}; localStorage.removeItem(STORAGE_KEY); renderCurrent(); }
-function flashMessage(msg){ const el=document.createElement('div'); el.textContent=msg; Object.assign(el.style,{position:'fixed',right:'18px',bottom:'60px',background:'#222',color:'#fff',padding:'8px 12px',borderRadius:'8px',opacity:0.95,zIndex:9999}); document.body.appendChild(el); setTimeout(()=>el.remove(),1200); }
-
-const contentArea = document.getElementById('contentArea');
-const tocList = document.getElementById('tocList');
-const tocNavigation = document.getElementById('tocNavigation');
-let currentChapter = 1;
-
-// 目次レンダリング
-function buildTOC(){
-  tocList.innerHTML='';
-  chapters.forEach(ch=>{
-    const li = document.createElement('li');
-    li.dataset.chapterId = ch.id; 
-    li.className = 'toc-item';
-    
-    const a = document.createElement('a'); a.textContent=ch.title; a.href='#';
-    // 章タイトルクリックで該当の章を表示し、コンテンツをトップへスクロール
-    a.onclick = e=>{ e.preventDefault(); renderChapter(ch.id); contentArea.scrollTo({top:0,behavior:'smooth'}); };
-    
-    li.appendChild(a);
-    
-    const sub = document.createElement('ul'); 
-    sub.dataset.chapterId = ch.id;
-    sub.style.margin='6px 0 8px 12px';
-    
-    ch.items.forEach((it, idx)=>{
-      const subli = document.createElement('li');
-      const sa = document.createElement('a'); sa.textContent = it.length>36? it.slice(0,36)+'…': it; sa.href='#';
-      sa.onclick = e=>{ e.preventDefault(); renderChapter(ch.id, ()=>{ 
-            const el=document.getElementById(idFor(ch.id, idx)); 
-            if(el){ 
-                el.scrollIntoView({behavior:'smooth', block:'start'}); 
-                highlightItem(el); 
-                setTimeout(() => {
-                    el.querySelector('textarea')?.focus(); 
-                }, 100);
-            } 
-        }); 
-    };
-      sa.className='small';
-      subli.appendChild(sa); sub.appendChild(subli);
-    });
-    li.appendChild(sub); tocList.appendChild(li);
-  });
-    updateTOCDisplay(currentChapter);
+if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+  speechSynthesis.onvoiceschanged = populateVoices;
 }
 
-// 項目をハイライトする関数
-function highlightItem(element) {
-    // 既存のハイライトをすべて削除
-    document.querySelectorAll('.item.highlight').forEach(el => el.classList.remove('highlight'));
-    // 新しいハイライトを設定
-    element.classList.add('highlight');
+function speak(text, lang) {
+  if(!voices.length) voices = speechSynthesis.getVoices();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = lang;
+  utter.rate = speechRate;
+  utter.pitch = 1.0;
+  let voice;
+
+  if(lang==='en-US'){
+    voice = voices.find(v=>v.lang==='en-US' && /samantha|alloy|serena/i.test(v.name)) || voices.find(v=>v.lang==='en-US') || voices[0];
+  } else if(lang==='ja-JP'){
+    voice = voices.find(v=>v.lang==='ja-JP' && /kyoko|yui|haruka/i.test(v.name)) || voices.find(v=>v.lang==='ja-JP') || voices[0];
+  } else {
+    voice = voices[0];
+  }
+
+  if(voice) utter.voice = voice;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
 }
 
-// 目次表示を制御する関数 (li.activeのトグル機能として利用)
-function updateTOCDisplay(chId) {
-    // 目次のメイン項目すべてから active クラスを削除
-    document.querySelectorAll('.toc-item').forEach(li => {
-        li.classList.remove('active');
+function renderCards() {
+  cards.innerHTML = '';
+  data.forEach(group=>{
+    const div = document.createElement('div');
+    div.className = 'card';
+
+    const title = document.createElement('div');
+    title.className = 'pattern';
+    title.textContent = group.pattern;
+    div.appendChild(title);
+
+    let currentMode = 'en+jp';
+
+    group.examples.forEach(([en,jp])=>{
+      const ex = document.createElement('div');
+      ex.className = 'example';
+      const text = document.createElement('div');
+      text.innerHTML = `<strong>${en}</strong> <span class="jp">${jp}</span>`;
+
+      const btn = document.createElement('button');
+      btn.textContent = '?再生';
+      btn.onclick = ()=>{
+        if(currentMode==='en+jp' || currentMode==='jpEn') speak(en,'en-US');
+        else if(currentMode==='enJp') speak(jp,'ja-JP');
+        else if(currentMode==='jpEn') speak(en,'en-US');
+        else if(currentMode==='jp') speak(jp,'ja-JP');
+      };
+
+      ex.appendChild(text);
+      ex.appendChild(btn);
+      div.appendChild(ex);
     });
 
-    // 選択された章の li 要素に active クラスを設定
-    const activeTocItem = document.querySelector(`.toc-item[data-chapter-id="${chId}"]`);
-    if (activeTocItem) {
-        activeTocItem.classList.add('active');
-    }
+    const btnDiv = document.createElement('div');
+    btnDiv.className = 'pattern-buttons';
+
+    const b1 = document.createElement('button');
+    b1.textContent = '英語＋日本語 → 英語発音';
+    b1.onclick = ()=>{
+      currentMode='en+jp';
+      group.examples.forEach((ex,i)=>{
+        const exDiv = div.querySelectorAll('.example')[i].children[0];
+        exDiv.innerHTML = `<strong>${ex[0]}</strong> <span class="jp">${ex[1]}</span>`;
+      });
+    };
+
+    const b2 = document.createElement('button');
+    b2.textContent = '日本語表示 → 英語発音';
+    b2.onclick = ()=>{
+      currentMode='jpEn';
+      group.examples.forEach((ex,i)=>{
+        const exDiv = div.querySelectorAll('.example')[i].children[0];
+        exDiv.innerHTML = `<span class="jp">${ex[1]}</span>`;
+      });
+    };
+
+    const b3 = document.createElement('button');
+    b3.textContent = '英語表示 → 日本語発音';
+    b3.onclick = ()=>{
+      currentMode='enJp';
+      group.examples.forEach((ex,i)=>{
+        const exDiv = div.querySelectorAll('.example')[i].children[0];
+        exDiv.innerHTML = `<strong>${ex[0]}</strong>`;
+      });
+    };
+
+    btnDiv.appendChild(b1);
+    btnDiv.appendChild(b2);
+    btnDiv.appendChild(b3);
+    div.appendChild(btnDiv);
+
+    cards.appendChild(div);
+  });
 }
 
+// スピードスライダー操作
+document.getElementById('speedRange').addEventListener('input', e=>{
+  speechRate = parseFloat(e.target.value);
+  document.getElementById('speedValue').textContent = speechRate.toFixed(1);
+});
 
-// 章レンダリング
-function renderChapter(chId, callback){
-  currentChapter = chId;
-  contentArea.innerHTML='';
-  const ch = chapters.find(c=>c.id===chId);
-  
-    // 目次を更新 (選択された章の目次のみ展開表示)
-    updateTOCDisplay(chId);
-
-  // 章タイトルを生成し、コンテンツエリアに追加
-  const h = document.createElement('div'); h.className='chapter-title';
-  h.innerHTML=`<strong>${ch.title}</strong><div></div>`; 
-  contentArea.appendChild(h);
-
-  ch.items.forEach((it, idx)=>{
-    const uid=idFor(chId, idx); 
-    const key=uid;
-    if (!state[key]) {
-        state[key] = { checked: false, comment: '', savedAt: 0 };
-    }
-    
-    const wrapper = document.createElement('div'); wrapper.className='item'; wrapper.id=uid;
-    const row = document.createElement('div'); row.className='item-row';
-    const cb = document.createElement('input'); cb.type='checkbox'; cb.id=uid+'-cb'; cb.checked=!!(state[key]?.checked);
-    cb.addEventListener('change',()=>{ state[key].checked=cb.checked; saveState(); });
-    
-    const lab = document.createElement('label'); lab.htmlFor=cb.id; lab.innerHTML=`<strong>${idx+1}.</strong>&nbsp; ${it}`;
-    row.appendChild(cb); row.appendChild(lab);
-    const commentWrap = document.createElement('div'); commentWrap.className='comment';
-    const ta = document.createElement('textarea'); ta.placeholder='この項目へのメモや備考を入力できます...';
-    ta.value = state[key]?.comment||''; 
-    
-    // テキストエリアにフォーカスがあたったときにハイライトを適用
-    ta.addEventListener('focus', () => { 
-        highlightItem(wrapper); 
-    });
-    
-    ta.addEventListener('input',()=>{ state[key].comment=ta.value; saveState(); });
-    
-    commentWrap.appendChild(ta);
-    const meta = document.createElement('div'); meta.className='meta';
-    
-    const lastSaved = document.createElement('div'); 
-    lastSaved.textContent = state[key]?.savedAt > 0 ? `更新: ${new Date(state[key].savedAt).toLocaleString()}` : '';
-
-    // クリアボタン
-    const actions = document.createElement('div'); const clearBtn=document.createElement('button'); clearBtn.className='small-btn'; clearBtn.textContent='クリア';
-    clearBtn.onclick=()=>{ 
-        if(confirm('この項目のチェックとコメントを消しますか？')){ 
-            state[key].checked=false; 
-            state[key].comment=''; 
-            state[key].savedAt=0; 
-            cb.checked=false; 
-            ta.value=''; 
-        } 
-    };
-    
-    actions.appendChild(clearBtn); meta.appendChild(lastSaved); meta.appendChild(actions);
-    wrapper.appendChild(row); wrapper.appendChild(commentWrap); wrapper.appendChild(meta);
-    contentArea.appendChild(wrapper);
-    
-    // 項目行をクリックしたときにハイライト
-    wrapper.addEventListener('click', (e) => {
-        highlightItem(wrapper);
-        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'TEXTAREA') {
-            ta.focus();
-        }
-    });
-
-  });
-
-  if(callback) callback();
-}
-
-
-// Excel出力
-function exportExcel(){
-  const wb = XLSX.utils.book_new();
-  chapters.forEach(ch=>{
-    const data = ch.items.map((item, idx)=>{
-      const key = idFor(ch.id, idx);
-      return {
-            項目: item, 
-            チェック: state[key]?.checked?'済':'', 
-            コメント: state[key]?.comment||'',
-            最終更新日時: state[key]?.savedAt > 0 ? new Date(state[key].savedAt).toLocaleString() : ''
-        };
-    });
-    const ws = XLSX.utils.json_to_sheet(data, {header:["項目","チェック","コメント", "最終更新日時"]});
-    XLSX.utils.book_append_sheet(wb, ws, ch.title.slice(0,31));
-  });
-  XLSX.writeFile(wb,'shukatsu_checklist.xlsx');
-}
-
-// Excelインポート
-function importExcel(file){
-  const reader = new FileReader();
-  reader.onload = e=>{
-    const wb = XLSX.read(e.target.result,{type:'binary'});
-    wb.SheetNames.forEach((sheetName, chIdx)=>{
-      const chId = chIdx + 1;
-      if (!chapters[chIdx] || chapters[chIdx].title.slice(0, 31) !== sheetName) return; 
-
-      const ws = wb.Sheets[sheetName];
-      const data = XLSX.utils.sheet_to_json(ws,{defval:''});
-      data.forEach((row, idx)=>{
-        const key = idFor(chId, idx);
-        const isChecked = row['チェック'] === '済';
-        const commentValue = row['コメント'] || '';
-        const savedAtValue = row['最終更新日時'] ? new Date(row['最終更新日時']).getTime() : Date.now();
-        
-        if (isChecked || commentValue) {
-            state[key] = { 
-                checked: isChecked, 
-                comment: commentValue, 
-                savedAt: savedAtValue 
-            };
-        } else {
-            delete state[key];
-        }
-      });
-    });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); 
-    renderCurrent(); 
-    flashMessage('Excelデータを読み込みました');
-  };
-  reader.readAsBinaryString(file);
-}
-
-
-// 初期化
-function renderCurrent(){ 
-    buildTOC(); 
-    renderChapter(currentChapter); 
-}
-
-// イベントリスナー
-document.getElementById('saveAll').addEventListener('click', saveState);
-document.getElementById('clearAll').addEventListener('click', clearState);
-document.getElementById('exportExcel').addEventListener('click', exportExcel);
-document.getElementById('importExcelBtn').addEventListener('click',()=>document.getElementById('importExcelInput').click());
-document.getElementById('importExcelInput').addEventListener('change', e=>{ if(e.target.files[0]) importExcel(e.target.files[0]); e.target.value=''; });
-
-loadState(); renderCurrent();
+renderCards();
 </script>
-
